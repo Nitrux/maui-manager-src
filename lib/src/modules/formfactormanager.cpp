@@ -16,24 +16,6 @@
 
 using namespace MauiMan;
 
-#if !defined Q_OS_ANDROID
-static QString typeToString(QInputDevice::DeviceTypes type)
-{
-    qDebug() << type;
-    QStringList typeString;
-    if (type.testFlag(QInputDevice::DeviceType::Mouse))
-        typeString << QStringLiteral("Mouse");
-    if (type.testFlag(QInputDevice::DeviceType::TouchPad))
-        typeString << QStringLiteral("TouchPad");
-    if (type.testFlag(QInputDevice::DeviceType::TouchScreen))
-        typeString << QStringLiteral("TouchScreen");
-    if (type.testFlag(QInputDevice::DeviceType::Keyboard))
-        typeString << QStringLiteral("Keyboard");
-    if (typeString.isEmpty())
-        typeString << QStringLiteral("Unknown");
-    return typeString.join((QStringLiteral(", ")));
-}
-#endif
 
 void FormFactorManager::sync(const QString &key, const QVariant &value)
 {
@@ -270,9 +252,9 @@ Qt::ScreenOrientation FormFactorInfo::screenOrientation()
 
 void FormFactorInfo::checkInputs(const QList<const QInputDevice *> &devices)
 {
-
-for(const auto &dev : devices)
-    qDebug() << "DEVICE:::" << dev->type();
+    for (const auto &dev : devices) {
+        qDebug() << "DEVICE:::" << dev->type();
+    }
 
     auto hasType = [devices](QInputDevice::DeviceType type) -> bool
     {
