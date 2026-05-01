@@ -8,7 +8,6 @@ set(mauimanserver_SRCS
     modules/background.cpp
     modules/theme.cpp
     modules/screen.cpp
-    modules/locale.cpp
     modules/formfactor.cpp
     modules/accessibility.cpp
     modules/inputdevices.cpp)

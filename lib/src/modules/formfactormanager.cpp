@@ -4,13 +4,10 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-#include <QSize>
 #include <QScreen>
 #include <QGuiApplication>
 
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 #include <QInputDevice>
 
@@ -19,20 +16,14 @@ using namespace MauiMan;
 
 void FormFactorManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void FormFactorManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
     if(m_interface)
     {
         m_interface->disconnect();
@@ -50,21 +41,18 @@ void FormFactorManager::setConnections()
         connect(m_interface, SIGNAL(preferredModeChanged(uint)), this, SLOT(onPreferredModeChanged(uint)));
         connect(m_interface, SIGNAL(forceTouchScreenChanged(bool)), this, SLOT(onForceTouchScreenChanged(bool)));
     }
-#endif
 }
 
 void FormFactorManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("FormFactor"));
 
-#if !defined Q_OS_ANDROID
     if(m_interface && m_interface->isValid())
     {
         m_preferredMode = m_interface->property("preferredMode").toUInt();
         m_forceTouchScreen = m_interface->property("forceTouchScreen").toBool();
         return;
     }
-#endif
 
     m_preferredMode = m_settings->load(QStringLiteral("PreferredMode"), m_preferredMode).toUInt();
     m_forceTouchScreen = m_settings->load(QStringLiteral("ForceTouchScreen"), m_forceTouchScreen).toBool();
@@ -72,11 +60,9 @@ void FormFactorManager::loadSettings()
 
 FormFactorManager::FormFactorManager(QObject *parent) : MauiMan::FormFactorInfo(parent)
   ,m_settings(new MauiMan::SettingsStore(this))
-  ,m_info(new MauiMan::FormFactorInfo(this))
 {
     qDebug( " INIT FORMFACTOR MANAGER");
 
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -90,7 +76,6 @@ FormFactorManager::FormFactorManager(QObject *parent) : MauiMan::FormFactorInfo(
             this->setConnections();
         }
     });
-#endif
     m_preferredMode = defaultMode();
 
     loadSettings();
@@ -156,7 +141,7 @@ void FormFactorManager::setForceTouchScreen(bool newForceTouchScreen)
 
     m_forceTouchScreen = newForceTouchScreen;
 
-    sync(QStringLiteral("forceTouchScreen"), m_forceTouchScreen);
+    sync(QStringLiteral("setForceTouchScreen"), m_forceTouchScreen);
     m_settings->save(QStringLiteral("ForceTouchScreen"), m_forceTouchScreen);
 
     Q_EMIT forceTouchScreenChanged(m_forceTouchScreen);
@@ -183,6 +168,7 @@ void FormFactorManager::onForceTouchScreenChanged(bool value)
 void FormFactorInfo::findBestMode()
 {
     uint bestMode = m_defaultMode;
+    const QRect currentScreenSize = screenSize();
     /*
      * 0- desktop
      * 1- tablet
@@ -191,7 +177,7 @@ void FormFactorInfo::findBestMode()
 
     if(m_hasTouchscreen)
     {
-        if(m_screenSize.width() > 1500)
+        if(currentScreenSize.width() > 1500)
         {
             if(m_hasKeyboard || m_hasMouse || m_hasTouchpad)
             {
@@ -201,7 +187,7 @@ void FormFactorInfo::findBestMode()
                 bestMode = 1; //A big touch screen alone
             }
         }
-        else if(m_screenSize.width()  > 500)
+        else if(currentScreenSize.width()  > 500)
         {
             bestMode = 1; //A tablet size touch screen
         }
@@ -213,12 +199,12 @@ void FormFactorInfo::findBestMode()
     }else
     {
 
-        if(m_screenSize.width() > 1500)
+        if(currentScreenSize.width() > 1500)
         {
             bestMode = 0; // A big screen
 
         }
-        else if(m_screenSize.width()  > 500)
+        else if(currentScreenSize.width()  > 500)
         {
             if(m_hasTouchpad)
             {
@@ -285,10 +271,8 @@ FormFactorInfo::FormFactorInfo(QObject *parent) : QObject(parent)
 {
     qDebug( "INIT FORMFACTOR INFO");
 
-#if !defined Q_OS_ANDROID
     checkInputs(QInputDevice::devices());
 qDebug() << "HAS KEYBOARD?" << QInputDevice::primaryKeyboard();
     findBestMode();
-#endif
 
 }

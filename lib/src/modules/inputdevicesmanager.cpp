@@ -3,10 +3,7 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 using namespace MauiMan;
 InputDevicesManager::InputDevicesManager(QObject *parent) : QObject(parent)
@@ -14,7 +11,6 @@ InputDevicesManager::InputDevicesManager(QObject *parent) : QObject(parent)
 {
     qDebug( " INIT ACCESSIBILITY MANAGER");
 
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -28,7 +24,6 @@ InputDevicesManager::InputDevicesManager(QObject *parent) : QObject(parent)
             this->setConnections();
         }
     });
-#endif
 
     loadSettings();
 
@@ -161,20 +156,14 @@ void MauiMan::InputDevicesManager::onKeyboardVariantChanged(const QString &keybo
 
 void MauiMan::InputDevicesManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void MauiMan::InputDevicesManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
     if(m_interface)
     {
         m_interface->disconnect();
@@ -188,21 +177,18 @@ void MauiMan::InputDevicesManager::setConnections()
                                       QDBusConnection::sessionBus(), this);
     if (m_interface->isValid())
     {
-        connect(m_interface, SIGNAL(keyboardLayoutChanged(double)), this, SLOT(onKeyboardLayoutChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardModelChanged(double)), this, SLOT(onKeyboardModelChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardRulesChanged(double)), this, SLOT(onKeyboardRulesChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardOptionsChanged(double)), this, SLOT(onKeyboardOptionsChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardVariantChanged(double)), this, SLOT(onKeyboardVariantChanged(QString)));
+        connect(m_interface, SIGNAL(keyboardLayoutChanged(QString)), this, SLOT(onKeyboardLayoutChanged(QString)));
+        connect(m_interface, SIGNAL(keyboardModelChanged(QString)), this, SLOT(onKeyboardModelChanged(QString)));
+        connect(m_interface, SIGNAL(keyboardRulesChanged(QString)), this, SLOT(onKeyboardRulesChanged(QString)));
+        connect(m_interface, SIGNAL(keyboardOptionsChanged(QString)), this, SLOT(onKeyboardOptionsChanged(QString)));
+        connect(m_interface, SIGNAL(keyboardVariantChanged(QString)), this, SLOT(onKeyboardVariantChanged(QString)));
 
     }
-#endif
 }
 
 void MauiMan::InputDevicesManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("InputDevices"));
-
-#if !defined Q_OS_ANDROID
 
     if(m_interface && m_interface->isValid())
     {
@@ -213,7 +199,6 @@ void MauiMan::InputDevicesManager::loadSettings()
         m_keyboardVariant = m_interface->property("keyboardVariant").toString();
         return;
     }
-#endif
 
     m_keyboardLayout =  m_settings->load(QStringLiteral("KeyboardLayout"), m_keyboardLayout).toString();
     m_keyboardModel = m_settings->load(QStringLiteral("KeyboardModel"), m_keyboardModel).toString();

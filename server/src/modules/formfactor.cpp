@@ -1,7 +1,7 @@
 #include "formfactor.h"
 #include "formfactoradaptor.h"
-#include <QDBusInterface>
-#include <QMap>
+#include <QDBusConnection>
+#include <QDebug>
 
 #include "settingsstore.h"
 
@@ -25,11 +25,11 @@ FormFactor::FormFactor(QObject *parent) : QObject(parent)
     m_hasTouchpad = m_manager->hasTouchpad();
     m_hasTouchscreen = m_manager->hasTouchscreen();
     
-    connect(m_manager, &MauiMan::FormFactorManager::bestModeChanged, this, &FormFactor::setBestMode);
-    connect(m_manager, &MauiMan::FormFactorManager::hasKeyboardChanged, this, &FormFactor::setHasKeyboard);
-    connect(m_manager, &MauiMan::FormFactorManager::hasMouseChanged, this, &FormFactor::setHasMouse);
-    connect(m_manager, &MauiMan::FormFactorManager::hasTouchpadChanged, this, &FormFactor::setHasTouchpad);
-    connect(m_manager, &MauiMan::FormFactorManager::hasTouchscreenChanged, this, &FormFactor::setHasTouchscreen);
+    connect(m_manager, &MauiMan::FormFactorInfo::bestModeChanged, this, &FormFactor::setBestMode);
+    connect(m_manager, &MauiMan::FormFactorInfo::hasKeyboardChanged, this, &FormFactor::setHasKeyboard);
+    connect(m_manager, &MauiMan::FormFactorInfo::hasMouseChanged, this, &FormFactor::setHasMouse);
+    connect(m_manager, &MauiMan::FormFactorInfo::hasTouchpadChanged, this, &FormFactor::setHasTouchpad);
+    connect(m_manager, &MauiMan::FormFactorInfo::hasTouchscreenChanged, this, &FormFactor::setHasTouchscreen);
 
     //grab user preferences
     MauiMan::SettingsStore settings;
@@ -126,11 +126,6 @@ void FormFactor::setHasTouchscreen(bool value)
 
     m_hasTouchscreen = value;
     Q_EMIT hasTouchscreenChanged(m_hasTouchscreen);
-}
-
-bool FormFactor::hasTouchScreen() const
-{
-    return m_hasTouchscreen;
 }
 
 bool FormFactor::forceTouchScreen() const

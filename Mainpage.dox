@@ -34,8 +34,6 @@ Maui Settings also exposes other settings for other system parts, such as Networ
 
 @warning Keep in mind that Maui Settings is still under heavy development and most modules are still not implemented.
 
-@image html mauisettings.gif "Maui Settings"
-
 @section usage Usage
 
 @subsection dbus DBus

@@ -1,6 +1,7 @@
 #include "inputdevices.h"
 #include "inputdevicesadaptor.h"
-#include <QDBusInterface>
+#include <QDBusConnection>
+#include <QDebug>
 #include "settingsstore.h"
 
 InputDevices::InputDevices(QObject *parent) : QObject(parent)

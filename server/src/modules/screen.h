@@ -1,10 +1,7 @@
 #pragma once
 
 #include <QObject>
-#include <QString>
 #include "modules/screenmanager.h"
-
-#include <QObject>
 
 class Screen : public QObject
 {
@@ -30,4 +27,3 @@ private:
     double m_scaleFactor = MauiMan::ScreenManager::DefaultValues::scaleFactor;
     uint m_orientation = MauiMan::ScreenManager::DefaultValues::orientation;
 };
-

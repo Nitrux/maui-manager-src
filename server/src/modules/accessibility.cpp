@@ -1,6 +1,7 @@
 #include "accessibility.h"
 
-#include <QDBusInterface>
+#include <QDBusConnection>
+#include <QDebug>
 
 #include "accessibilityadaptor.h"
 

@@ -4,17 +4,13 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 using namespace MauiMan;
 BackgroundManager::BackgroundManager(QObject *parent) : QObject(parent)
   ,m_settings(new MauiMan::SettingsStore(this))
 {
     qDebug( " INIT BACKGORUND MANAGER");
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -29,7 +25,6 @@ BackgroundManager::BackgroundManager(QObject *parent) : QObject(parent)
             this->setConnections();
         }
     });
-#endif
 
     loadSettings();
 
@@ -176,21 +171,14 @@ void BackgroundManager::onShowWallpaperChanged(const bool &showWallpaper)
 
 void BackgroundManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void BackgroundManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
-
     if(m_interface)
     {
         m_interface->disconnect();
@@ -211,14 +199,11 @@ void BackgroundManager::setConnections()
         connect(m_interface, SIGNAL(dimWallpaperChanged(bool)), this, SLOT(onDimWallpaperChanged(bool)));
 
     }
-#endif
 }
 
 void BackgroundManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("Background"));
-
-#if !defined Q_OS_ANDROID
 
     if(m_interface && m_interface->isValid())
     {
@@ -229,7 +214,6 @@ void BackgroundManager::loadSettings()
         m_solidColor = m_interface->property("solidColor").toString();
         return;
     }
-#endif
 
     m_wallpaperSource = m_settings->load(QStringLiteral("Wallpaper"), m_wallpaperSource).toString();
     m_dimWallpaper = m_settings->load(QStringLiteral("DimWallpaper"), m_dimWallpaper).toBool();

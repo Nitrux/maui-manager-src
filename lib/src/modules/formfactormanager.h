@@ -85,24 +85,12 @@ namespace MauiMan
         {
             [[nodiscard]] static uint getDefaultMode()
             {
-
-                #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(UBUNTU_TOUCH)
-                return MauiMan::FormFactorInfo::Mode::Phone;
-                #else
-
                 return QByteArrayList{"1", "true"}.contains(qgetenv("QT_QUICK_CONTROLS_MOBILE")) ? MauiMan::FormFactorInfo::Mode::Phone : MauiMan::FormFactorInfo::Mode::Desktop;
-                #endif
             }
 
             [[nodiscard]] static bool getHasTouchScreen()
             {
-
-                #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(UBUNTU_TOUCH)
-                return true;
-                #else
-
                 return false;
-                #endif
             }
 
             static inline const uint defaultMode = DefaultValues::getDefaultMode();
@@ -137,9 +125,6 @@ namespace MauiMan
 
         bool m_hasMouse = true;
         bool m_hasTouchpad = true;
-
-        QRect m_screenSize;
-        Qt::ScreenOrientation m_screenOrientation;
 
         void checkInputs(const QList<const QInputDevice *> &devices);
         void findBestMode();
@@ -191,11 +176,8 @@ namespace MauiMan
         void onForceTouchScreenChanged(bool value);
 
     private:
-        #if !defined Q_OS_ANDROID
         QDBusInterface *m_interface = nullptr;
-        #endif
         MauiMan::SettingsStore *m_settings;
-        FormFactorInfo *m_info;
 
         uint m_preferredMode;
         bool m_forceTouchScreen = false;

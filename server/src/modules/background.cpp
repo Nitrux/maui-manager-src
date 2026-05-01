@@ -1,6 +1,6 @@
 #include "background.h"
 #include "backgroundadaptor.h"
-#include <QDBusInterface>
+#include <QDBusConnection>
 
 #include "settingsstore.h"
 
@@ -94,5 +94,4 @@ void Background::setShowWallpaper(bool showWallpaper)
     m_showWallpaper = showWallpaper;
     Q_EMIT showWallpaperChanged(m_showWallpaper);
 }
-
 

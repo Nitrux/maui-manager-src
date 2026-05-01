@@ -4,10 +4,7 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 using namespace MauiMan;
 
@@ -16,7 +13,6 @@ ThemeManager::ThemeManager(QObject *parent) : QObject(parent)
 {
     qDebug( " INIT THEME MANAGER");
 
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -34,27 +30,20 @@ ThemeManager::ThemeManager(QObject *parent) : QObject(parent)
 
         }
     });
-#endif
 
     loadSettings();
 }
 
 void ThemeManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void ThemeManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
     if(m_interface)
     {
         m_interface->disconnect();
@@ -85,14 +74,12 @@ void ThemeManager::setConnections()
         connect(m_interface, SIGNAL(monospacedFontChanged(QString)), this, SLOT(onMonospacedFontChanged(QString)));
         connect(m_interface, SIGNAL(customColorSchemeChanged(QString)), this, SLOT(onCustomColorSchemeChanged(QString)));
     }
-#endif
 }
 
 void ThemeManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("Theme"));
 
-#if !defined Q_OS_ANDROID
     if(m_interface && m_interface->isValid())
     {
         m_accentColor = m_interface->property("accentColor").toString();
@@ -113,7 +100,6 @@ void ThemeManager::loadSettings()
 
         return;
     }
-#endif
 
     m_accentColor = m_settings->load(QStringLiteral("AccentColor"), m_accentColor).toString();
     m_styleType = m_settings->load(QStringLiteral("StyleType"), m_styleType).toInt();

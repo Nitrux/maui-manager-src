@@ -7,17 +7,9 @@ SettingsStore::SettingsStore(QObject *parent) : QObject(parent)
 {
 }
 
-SettingsStore::~SettingsStore()
-{
-}
-
 QVariant SettingsStore::load(const QString &key, const QVariant &defaultValue)
 {
-    QVariant variant;
-
-    variant = m_settings->value(key, defaultValue);
-
-    return variant;
+    return m_settings->value(key, defaultValue);
 }
 
 void SettingsStore::save(const QString &key, const QVariant &value)

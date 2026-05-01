@@ -1,10 +1,9 @@
 #include "screen.h"
 #include "screenadaptor.h"
-#include <QDBusInterface>
+#include <QDBusConnection>
+#include <QDebug>
 
 #include "settingsstore.h"
-
-#include <QDebug>
 
 Screen::Screen(QObject *parent) : QObject(parent)
 {
@@ -18,7 +17,7 @@ Screen::Screen(QObject *parent) : QObject(parent)
     MauiMan::SettingsStore settings;
     settings.beginModule(QStringLiteral("Screen"));
     m_scaleFactor = settings.load(QStringLiteral("ScaleFactor"), m_scaleFactor).toFloat();
-    m_orientation = settings.load(QStringLiteral("Orientation"), m_scaleFactor).toUInt();
+    m_orientation = settings.load(QStringLiteral("Orientation"), m_orientation).toUInt();
     settings.endModule();
 }
 

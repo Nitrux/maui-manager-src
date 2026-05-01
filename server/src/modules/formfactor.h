@@ -52,9 +52,7 @@ public:
 
     bool hasTouchpad() const;
 
-    
     bool forceTouchScreen() const;
-
     void setForceTouchScreen(bool newForceTouchScreen);
 
 private Q_SLOTS:
@@ -80,8 +78,6 @@ private:
 
     bool m_hasTouchpad= false;
 
-    bool hasTouchScreen() const;
-
     bool m_forceTouchScreen = false;
 
 Q_SIGNALS:
@@ -94,4 +90,3 @@ Q_SIGNALS:
     void hasTouchpadChanged(bool hasTouchpad);
     void forceTouchScreenChanged(bool forceTouchScreen);
 };
-

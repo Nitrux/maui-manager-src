@@ -1,6 +1,6 @@
 #include "theme.h"
 #include "themeadaptor.h"
-#include <QDBusInterface>
+#include <QDBusConnection>
 
 #include "settingsstore.h"
 
@@ -16,8 +16,6 @@ Theme::Theme(QObject *parent) : QObject(parent)
         return;
     }
 
-    bool ok = false;
-
     MauiMan::SettingsStore settings;
 
     settings.beginModule(QStringLiteral("Theme"));
@@ -25,13 +23,13 @@ Theme::Theme(QObject *parent) : QObject(parent)
     m_accentColor = settings.load(QStringLiteral("AccentColor"), m_accentColor).toString();
     m_iconTheme = settings.load(QStringLiteral("IconTheme"), m_iconTheme).toString();
     m_windowControlsTheme = settings.load(QStringLiteral("WindowControlsTheme"), m_windowControlsTheme).toString();
-    m_styleType = settings.load(QStringLiteral("StyleType"), m_styleType).toInt(&ok);
+    m_styleType = settings.load(QStringLiteral("StyleType"), m_styleType).toInt();
     m_enableCSD = settings.load(QStringLiteral("EnableCSD"), m_enableCSD).toBool();
     m_borderRadius = settings.load(QStringLiteral("BorderRadius"), m_borderRadius).toUInt();
-    m_iconSize = settings.load(QStringLiteral("IconSize"), m_iconSize).toUInt(&ok);
-    m_paddingSize = settings.load(QStringLiteral("PaddingSize"), m_paddingSize).toUInt(&ok);
-    m_marginSize = settings.load(QStringLiteral("MarginSize"), m_marginSize).toUInt(&ok);
-    m_spacingSize = settings.load(QStringLiteral("SpacingSize"), m_spacingSize).toUInt(&ok);
+    m_iconSize = settings.load(QStringLiteral("IconSize"), m_iconSize).toUInt();
+    m_paddingSize = settings.load(QStringLiteral("PaddingSize"), m_paddingSize).toUInt();
+    m_marginSize = settings.load(QStringLiteral("MarginSize"), m_marginSize).toUInt();
+    m_spacingSize = settings.load(QStringLiteral("SpacingSize"), m_spacingSize).toUInt();
     m_enableEffects = settings.load(QStringLiteral("EnableEffects"), m_enableEffects).toBool();
     m_defaultFont = settings.load(QStringLiteral("DefaultFont"), m_defaultFont).toString();
     m_smallFont = settings.load(QStringLiteral("SmallFont"), m_smallFont).toString();

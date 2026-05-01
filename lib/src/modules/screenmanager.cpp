@@ -4,10 +4,7 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 using namespace MauiMan;
 
@@ -16,7 +13,6 @@ ScreenManager::ScreenManager(QObject * parent ) : QObject(parent)
 {
     qDebug( " INIT SCREEN MANAGER");
 
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -30,7 +26,6 @@ ScreenManager::ScreenManager(QObject * parent ) : QObject(parent)
             this->setConnections();
         }
     });
-#endif
 
     loadSettings();
 }
@@ -87,20 +82,14 @@ void ScreenManager::onOrientationChanged(uint orientation)
 
 void ScreenManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void ScreenManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
     if(m_interface)
     {
         m_interface->disconnect();
@@ -118,14 +107,11 @@ void ScreenManager::setConnections()
         connect(m_interface, SIGNAL(orientationChanged(uint)), this, SLOT(onOrientationChanged(uint)));
 
     }
-#endif
 }
 
 void ScreenManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("Screen"));
-
-#if !defined Q_OS_ANDROID
 
     if(m_interface && m_interface->isValid())
     {
@@ -133,7 +119,6 @@ void ScreenManager::loadSettings()
         m_orientation = m_interface->property("orientation").toUInt();
         return;
     }
-#endif
 
     m_scaleFactor = m_settings->load(QStringLiteral("ScaleFactor"), m_scaleFactor).toDouble();
     m_orientation = m_settings->load(QStringLiteral("Orientation"), m_orientation).toUInt();

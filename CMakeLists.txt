@@ -10,9 +10,15 @@ set(REQUIRED_KF_VERSION 5.240.0)
 
 set(MAUI_MAJOR_VERSION 4)
 set(MAUIMAN_VERSION 4.0.3)
+set(MAUIMAN_RELEASE_VERSION 4.0.3)
+set(MAUIMAN_SO_VERSION 4.0.3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:-march=x86-64-v3>")
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -33,6 +39,4 @@ include(KDECMakeSettings)
 
 add_subdirectory(lib) #adds mauiman libs
 
-if(UNIX AND NOT APPLE AND NOT ANDROID)
-    add_subdirectory(server) #adds and installs the dbus service and is a server
-endif()
+add_subdirectory(server) #adds and installs the dbus service and is a server

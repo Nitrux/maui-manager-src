@@ -76,9 +76,7 @@ namespace MauiMan
         void onKeyboardVariantChanged (const QString &keyboardVariant);
         
     private:
-        #if !defined Q_OS_ANDROID
         QDBusInterface *m_interface = nullptr;
-        #endif
         MauiMan::SettingsStore *m_settings;
         
         void sync(const QString &key, const QVariant &value);

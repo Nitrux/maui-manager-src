@@ -3,10 +3,7 @@
 #include "mauimanutils.h"
 
 #include <QDebug>
-
-#if !defined Q_OS_ANDROID
 #include <QDBusInterface>
-#endif
 
 using namespace MauiMan;
 
@@ -15,7 +12,6 @@ AccessibilityManager::AccessibilityManager(QObject *parent) : QObject(parent)
 {
     qDebug( " INIT ACCESSIBILITY MANAGER");
 
-#if !defined Q_OS_ANDROID
     auto server = new MauiManUtils(this);
     if(server->serverRunning())
     {
@@ -29,7 +25,6 @@ AccessibilityManager::AccessibilityManager(QObject *parent) : QObject(parent)
             this->setConnections();
         }
     });
-#endif
 
     loadSettings();
 }
@@ -81,20 +76,14 @@ void AccessibilityManager::onPlaySoundsChanged(bool playSounds)
 
 void AccessibilityManager::sync(const QString &key, const QVariant &value)
 {
-#if !defined Q_OS_ANDROID
     if (m_interface && m_interface->isValid())
     {
         m_interface->call(key, value);
     }
-#else
-    Q_UNUSED(key)
-    Q_UNUSED(value)
-#endif
 }
 
 void AccessibilityManager::setConnections()
 {
-#if !defined Q_OS_ANDROID
     if(m_interface)
     {
         m_interface->disconnect();
@@ -113,14 +102,12 @@ void AccessibilityManager::setConnections()
         connect(m_interface, SIGNAL(playSoundsChanged(bool)), this, SLOT(onPlaySoundsChanged(bool)));
         connect(m_interface, SIGNAL(scrollBarPolicyChanged(uint)), this, SLOT(onScrollBarPolicyChanged(uint)));
     }
-#endif
 }
 
 void AccessibilityManager::loadSettings()
 {
     m_settings->beginModule(QStringLiteral("Accessibility"));
 
-#if !defined Q_OS_ANDROID
     if(m_interface && m_interface->isValid())
     {
         m_singleClick = m_interface->property("singleClick").toBool();
@@ -128,7 +115,6 @@ void AccessibilityManager::loadSettings()
         m_playSounds = m_interface->property("playSounds").toBool();
         return;
     }
-#endif
 
     m_singleClick = m_settings->load(QStringLiteral("SingleClick"), m_singleClick).toBool();
     m_scrollBarPolicy = m_settings->load(QStringLiteral("ScrollBarPolicy"), m_scrollBarPolicy).toUInt();

@@ -57,9 +57,7 @@ Q_SIGNALS:
     void orientationChanged(uint orientation);
 
 private:
-#if !defined Q_OS_ANDROID
     QDBusInterface *m_interface = nullptr;
-#endif
     MauiMan::SettingsStore *m_settings;
 
     void sync(const QString &key, const QVariant &value);

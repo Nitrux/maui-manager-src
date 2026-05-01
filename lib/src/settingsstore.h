@@ -23,7 +23,6 @@ public:
      * @param parent
      */
     explicit SettingsStore(QObject *parent = nullptr);
-    ~SettingsStore();
 
     /**
      * @brief Load the value of a conf entry, with a possible default value
@@ -55,4 +54,3 @@ private:
     QSettings *m_settings;
 };
 }
-

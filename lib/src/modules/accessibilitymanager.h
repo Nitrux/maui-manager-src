@@ -41,11 +41,7 @@ public:
     {
         static bool isMobile()
         {
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(UBUNTU_TOUCH)
-            return true;
-#else
             return QByteArrayList{"1", "true"}.contains(qgetenv("QT_QUICK_CONTROLS_MOBILE"));
-#endif
         }
         static inline const bool singleClick = DefaultValues::isMobile();
         static inline const bool playSounds = true;
@@ -69,9 +65,7 @@ private Q_SLOTS:
     void onPlaySoundsChanged(bool playSounds);
 
 private:
-#if !defined Q_OS_ANDROID
     QDBusInterface *m_interface = nullptr;
-#endif
     MauiMan::SettingsStore *m_settings;
 
     bool m_singleClick = AccessibilityManager::DefaultValues::singleClick;

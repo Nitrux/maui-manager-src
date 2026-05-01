@@ -128,16 +128,10 @@ namespace MauiMan
              */
             static int preferredStyleType()
             {
-
-                #ifdef Q_OS_ANDROID
-                return 1;
-                #endif
-                #ifdef Q_OS_LINUX
                 if(!MauiManUtils::isMauiSession())
                 {
                     return 3; //if it is plasma or other session use the system color scheme by setting the style to 3=auto
                 }
-                #endif
                 return 0;
             }
 
@@ -292,9 +286,7 @@ namespace MauiMan
         void allowCustomStylingChanged(bool customStyling);
 
     private:
-        #if !defined Q_OS_ANDROID
         QDBusInterface *m_interface = nullptr;
-        #endif
 
         MauiMan::SettingsStore *m_settings;
 
@@ -321,4 +313,3 @@ namespace MauiMan
 
     };
 }
-
