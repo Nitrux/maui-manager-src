@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(MauiManGroup)
 
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "This project supports Linux only.")
+endif()
+
+
 set(QT_MAJOR_VERSION 6)
 set(REQUIRED_QT_VERSION 6.4)
 
@@ -40,3 +45,14 @@ include(KDECMakeSettings)
 add_subdirectory(lib) #adds mauiman libs
 
 add_subdirectory(server) #adds and installs the dbus service and is a server
+
+if(NOT TARGET uninstall)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE
+        @ONLY)
+
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+endif()
