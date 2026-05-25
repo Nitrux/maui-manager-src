@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QObject>
 #include <QString>
 #include <QFont>
@@ -7,7 +8,7 @@
 #include "mauiman_export.h"
 #include "mauimanutils.h"
 
-class QDBusInterface;
+class OrgMauimanThemeInterface;
 
 /**
  * @brief The MauiMan name-space contains all of the available modules for configuring the Maui Applications and Shell properties.
@@ -30,6 +31,12 @@ namespace MauiMan
     {
         Q_OBJECT
         /**
+         * Schema version of the Theme module. Bumped when properties are added
+         * or removed. Lets consumers feature-detect at runtime.
+         */
+        Q_PROPERTY(uint version READ version CONSTANT)
+
+        /**
          * The style type for the color scheme. The possible values are:
          * - 0 Light
          * - 1 Dark
@@ -43,7 +50,7 @@ namespace MauiMan
         /**
          * The preferred accent color used for the highlighted and checked states.
          */
-        Q_PROPERTY(QString accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged RESET resetAccentColor)
+        Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged RESET resetAccentColor)
 
         /**
          * The preferred icon theme. This preference is only valid when using the Maui Shell session.
@@ -84,7 +91,7 @@ namespace MauiMan
         /**
          * The preferred spacing size between elements in a row or column, such as lists or browsing elements.
          */
-        Q_PROPERTY(uint spacingSize READ spacingSize WRITE setSpacingSize NOTIFY spacingSizeChanged RESET resetSPacingSize)
+        Q_PROPERTY(uint spacingSize READ spacingSize WRITE setSpacingSize NOTIFY spacingSizeChanged RESET resetSpacingSize)
 
         /**
          * Whether the user prefers for the system to have visual effects, such as animations, blur, etc.
@@ -117,6 +124,8 @@ namespace MauiMan
         Q_PROPERTY(bool allowCustomStyling READ allowCustomStyling WRITE setAllowCustomStyling NOTIFY allowCustomStylingChanged)
 
     public:
+
+        uint version() const { return 1u; }
 
         /**
          * @brief The Theme module default values
@@ -196,8 +205,8 @@ namespace MauiMan
         int styleType() const;
         void setStyleType(int newStyleType);
 
-        const QString &accentColor() const;
-        void setAccentColor(const QString &newAccentColor);
+        QColor accentColor() const;
+        void setAccentColor(const QColor &newAccentColor);
         void resetAccentColor();
 
         const QString &iconTheme() const;
@@ -230,6 +239,8 @@ namespace MauiMan
 
         uint spacingSize() const;
         void setSpacingSize(uint spacingSize);
+        void resetSpacingSize();
+        // TODO(maui-5): remove compatibility alias on next ABI break.
         void resetSPacingSize();
 
         QString defaultFont() const;
@@ -253,6 +264,7 @@ namespace MauiMan
     private Q_SLOTS:
         void onStyleTypeChanged(const int &newStyleType);
         void onAccentColorChanged(const QString &newAccentColor);
+        // Slot stays QString because it's connected to the DBus signal (wire type s).
         void onWindowControlsThemeChanged(const QString &newWindowControlsTheme);
         void onIconThemeChanged(const QString &newIconTheme);
         void onEnableCSDChanged(const bool &enableCSD);
@@ -269,7 +281,7 @@ namespace MauiMan
 
     Q_SIGNALS:
         void styleTypeChanged(int styleType);
-        void accentColorChanged(QString accentColor);
+        void accentColorChanged(QColor accentColor);
         void iconThemeChanged(QString iconTheme);
         void windowControlsThemeChanged(QString windowControlsTheme);
         void enableCSDChanged(bool enableCSD);
@@ -286,12 +298,12 @@ namespace MauiMan
         void allowCustomStylingChanged(bool customStyling);
 
     private:
-        QDBusInterface *m_interface = nullptr;
+        OrgMauimanThemeInterface *m_interface = nullptr;
 
         MauiMan::SettingsStore *m_settings;
 
         int m_styleType = ThemeManager::DefaultValues::styleType;
-        QString m_accentColor = ThemeManager::DefaultValues::accentColor;
+        QColor m_accentColor = QColor(ThemeManager::DefaultValues::accentColor);
         QString m_iconTheme = ThemeManager::DefaultValues::iconTheme;
         QString m_windowControlsTheme = ThemeManager::DefaultValues::windowControlsTheme;
         bool m_enableCSD = ThemeManager::DefaultValues::enableCSD;
@@ -307,7 +319,7 @@ namespace MauiMan
         QString m_customColorScheme = MauiMan::ThemeManager::DefaultValues::customColorScheme;
         bool m_allowCustomStyling = MauiMan::ThemeManager::DefaultValues::allowCustomStyling;
 
-        void sync(const QString &key, const QVariant &value);
+        bool sync(const QString &key, const QVariant &value);
         void setConnections();
         void loadSettings();
 

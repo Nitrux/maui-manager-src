@@ -1,24 +1,25 @@
 #include "screen.h"
 #include "screenadaptor.h"
 #include <QDBusConnection>
-#include <QDebug>
+#include <QGuiApplication>
+#include <QLoggingCategory>
+#include <QScreen>
+#include <QtGlobal>
 
-#include "settingsstore.h"
+Q_LOGGING_CATEGORY(LOG_SCREEN_SERVER, "mauiman.server.screen")
 
 Screen::Screen(QObject *parent) : QObject(parent)
 {
-    qDebug( " INIT SCREEN MODULE");
+    qCInfo(LOG_SCREEN_SERVER, "INIT SCREEN MODULE");
     new ScreenAdaptor(this);
     if(!QDBusConnection::sessionBus().registerObject(QStringLiteral("/Screen"), this))
     {
-        qDebug() << "FAILED TO REGISTER SCREEN DBUS OBJECT";
+        qCWarning(LOG_SCREEN_SERVER) << "FAILED TO REGISTER SCREEN DBUS OBJECT";
         return;
     }
-    MauiMan::SettingsStore settings;
-    settings.beginModule(QStringLiteral("Screen"));
-    m_scaleFactor = settings.load(QStringLiteral("ScaleFactor"), m_scaleFactor).toFloat();
-    m_orientation = settings.load(QStringLiteral("Orientation"), m_orientation).toUInt();
-    settings.endModule();
+
+    connect(qGuiApp, &QGuiApplication::primaryScreenChanged, this, &Screen::setPrimaryScreen);
+    setPrimaryScreen(QGuiApplication::primaryScreen());
 }
 
 double Screen::scaleFactor() const
@@ -26,25 +27,66 @@ double Screen::scaleFactor() const
     return m_scaleFactor;
 }
 
-void Screen::setScaleFactor(double scaleFactor)
-{
-    if (m_scaleFactor == scaleFactor)
-        return;
-
-    m_scaleFactor = scaleFactor;
-    Q_EMIT scaleFactorChanged(m_scaleFactor);
-}
-
 uint Screen::orientation() const
 {
     return m_orientation;
 }
 
-void Screen::setOrientation(uint orientation)
+void Screen::setPrimaryScreen(QScreen *screen)
 {
-    if (m_orientation == orientation)
+    if (m_primaryScreen == screen)
+    {
+        refreshFromPrimaryScreen();
         return;
+    }
 
-    m_orientation = orientation;
-    Q_EMIT orientationChanged(m_orientation);
+    disconnect(m_orientationChangedConnection);
+    disconnect(m_geometryChangedConnection);
+    disconnect(m_logicalDpiChangedConnection);
+    disconnect(m_physicalDpiChangedConnection);
+
+    m_primaryScreen = screen;
+    if (m_primaryScreen)
+    {
+        m_orientationChangedConnection = connect(m_primaryScreen, &QScreen::orientationChanged, this, [this](Qt::ScreenOrientation)
+        {
+            refreshFromPrimaryScreen();
+        });
+        m_geometryChangedConnection = connect(m_primaryScreen, &QScreen::geometryChanged, this, [this](const QRect &)
+        {
+            refreshFromPrimaryScreen();
+        });
+        m_logicalDpiChangedConnection = connect(m_primaryScreen, &QScreen::logicalDotsPerInchChanged, this, [this](qreal)
+        {
+            refreshFromPrimaryScreen();
+        });
+        m_physicalDpiChangedConnection = connect(m_primaryScreen, &QScreen::physicalDotsPerInchChanged, this, [this](qreal)
+        {
+            refreshFromPrimaryScreen();
+        });
+    }
+
+    refreshFromPrimaryScreen();
+}
+
+void Screen::refreshFromPrimaryScreen()
+{
+    if (!m_primaryScreen)
+    {
+        return;
+    }
+
+    const double nextScaleFactor = m_primaryScreen->devicePixelRatio();
+    if (!qFuzzyCompare(1.0 + m_scaleFactor, 1.0 + nextScaleFactor))
+    {
+        m_scaleFactor = nextScaleFactor;
+        Q_EMIT scaleFactorChanged(m_scaleFactor);
+    }
+
+    const uint nextOrientation = static_cast<uint>(m_primaryScreen->orientation());
+    if (m_orientation != nextOrientation)
+    {
+        m_orientation = nextOrientation;
+        Q_EMIT orientationChanged(m_orientation);
+    }
 }

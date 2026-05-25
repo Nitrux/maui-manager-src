@@ -1,23 +1,20 @@
 #include "inputdevicesmanager.h"
-#include "settingsstore.h"
+#include "inputdevices_interface.h"
 #include "mauimanutils.h"
 
 #include <QDebug>
-#include <QDBusInterface>
+#include <QDBusMessage>
 
 using namespace MauiMan;
 InputDevicesManager::InputDevicesManager(QObject *parent) : QObject(parent)
-  ,m_settings(new MauiMan::SettingsStore(this))
 {
-    qDebug( " INIT ACCESSIBILITY MANAGER");
-
-    auto server = new MauiManUtils(this);
+    auto server = MauiManUtils::instance();
     if(server->serverRunning())
     {
         this->setConnections();
     }
 
-    connect(server, &MauiManUtils::serverRunningChanged, [this](bool state)
+    connect(server, &MauiManUtils::serverRunningChanged, this, [this](bool state)
     {
         if(state)
         {
@@ -31,126 +28,206 @@ InputDevicesManager::InputDevicesManager(QObject *parent) : QObject(parent)
 
 QString MauiMan::InputDevicesManager::keyboardLayout() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("keyboardLayout");
+        if (value.isValid())
+        {
+            return value.toString();
+        }
+    }
+
     return m_keyboardLayout;
 }
 
 QString MauiMan::InputDevicesManager::keyboardModel() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("keyboardModel");
+        if (value.isValid())
+        {
+            return value.toString();
+        }
+    }
+
     return m_keyboardModel;
 }
 
 QString MauiMan::InputDevicesManager::keyboardVariant() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("keyboardVariant");
+        if (value.isValid())
+        {
+            return value.toString();
+        }
+    }
+
     return m_keyboardVariant;
 }
 
 QString MauiMan::InputDevicesManager::keyboardOptions() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("keyboardOptions");
+        if (value.isValid())
+        {
+            return value.toString();
+        }
+    }
+
     return m_keyboardOptions;
 }
 
 QString MauiMan::InputDevicesManager::keyboardRules() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("keyboardRules");
+        if (value.isValid())
+        {
+            return value.toString();
+        }
+    }
+
     return m_keyboardRules;
 }
 
 void MauiMan::InputDevicesManager::setKeyboardLayout(QString keyboardLayout)
 {
-    if (m_keyboardLayout == keyboardLayout)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "InputDevicesManager::setKeyboardLayout ignored because InputDevices facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->keyboardLayout() == keyboardLayout)
         return;
 
-    m_keyboardLayout = keyboardLayout;
-    sync(QStringLiteral("setKeyboardLayout"), m_keyboardLayout);
-    m_settings->save(QStringLiteral("KeyboardLayout"), m_keyboardLayout);
-    Q_EMIT keyboardLayoutChanged(m_keyboardLayout);
+    sync(QStringLiteral("setKeyboardLayout"), keyboardLayout);
+    loadSettings();
 }
 
 void MauiMan::InputDevicesManager::setKeyboardModel(QString keyboardModel)
 {
-    if (m_keyboardModel == keyboardModel)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "InputDevicesManager::setKeyboardModel ignored because InputDevices facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->keyboardModel() == keyboardModel)
         return;
 
-    m_keyboardModel = keyboardModel;
-    sync(QStringLiteral("setKeyboardModel"), m_keyboardModel);
-    m_settings->save(QStringLiteral("KeyboardModel"), m_keyboardModel);
-    Q_EMIT keyboardModelChanged(m_keyboardModel);
+    sync(QStringLiteral("setKeyboardModel"), keyboardModel);
+    loadSettings();
 }
 
 void MauiMan::InputDevicesManager::setKeyboardVariant(QString keyboardVariant)
 {
-    if (m_keyboardVariant == keyboardVariant)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "InputDevicesManager::setKeyboardVariant ignored because InputDevices facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->keyboardVariant() == keyboardVariant)
         return;
 
-    m_keyboardVariant = keyboardVariant;
-    sync(QStringLiteral("setKeyboardVariant"), m_keyboardVariant);
-    m_settings->save(QStringLiteral("KeyboardVariant"), m_keyboardVariant);
-    Q_EMIT keyboardVariantChanged(m_keyboardVariant);
+    sync(QStringLiteral("setKeyboardVariant"), keyboardVariant);
+    loadSettings();
 }
 
 void MauiMan::InputDevicesManager::setKeyboardOptions(QString keyboardOptions)
 {
-    if (m_keyboardOptions == keyboardOptions)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "InputDevicesManager::setKeyboardOptions ignored because InputDevices facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->keyboardOptions() == keyboardOptions)
         return;
 
-    m_keyboardOptions = keyboardOptions;
-    sync(QStringLiteral("setKeyboardOptions"), m_keyboardOptions);
-    m_settings->save(QStringLiteral("KeyboardOptions"), m_keyboardOptions);
-    Q_EMIT keyboardOptionsChanged(m_keyboardOptions);
+    sync(QStringLiteral("setKeyboardOptions"), keyboardOptions);
+    loadSettings();
 }
 
 void MauiMan::InputDevicesManager::setKeyboardRules(QString keyboardRules)
 {
-    if (m_keyboardRules == keyboardRules)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "InputDevicesManager::setKeyboardRules ignored because InputDevices facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->keyboardRules() == keyboardRules)
         return;
 
-    m_keyboardRules = keyboardRules;
-    sync(QStringLiteral("setKeyboardRules"), m_keyboardRules);
-    m_settings->save(QStringLiteral("KeyboardRules"), m_keyboardRules);
-    Q_EMIT keyboardRulesChanged(m_keyboardRules);
+    sync(QStringLiteral("setKeyboardRules"), keyboardRules);
+    loadSettings();
 }
 
 void MauiMan::InputDevicesManager::onKeyboardLayoutChanged(const QString &keyboardLayout)
 {
-    if (m_keyboardLayout == keyboardLayout)
+    Q_UNUSED(keyboardLayout);
+    const QString previousKeyboardLayout = m_keyboardLayout;
+
+    loadSettings();
+    if (m_keyboardLayout == previousKeyboardLayout)
         return;
 
-    m_keyboardLayout = keyboardLayout;
     Q_EMIT keyboardLayoutChanged(m_keyboardLayout);
 }
 
 void MauiMan::InputDevicesManager::onKeyboardModelChanged(const QString &keyboardModel)
 {
-    if (m_keyboardModel == keyboardModel)
+    Q_UNUSED(keyboardModel);
+    const QString previousKeyboardModel = m_keyboardModel;
+
+    loadSettings();
+    if (m_keyboardModel == previousKeyboardModel)
         return;
 
-    m_keyboardModel = keyboardModel;
     Q_EMIT keyboardModelChanged(m_keyboardModel);
 }
 
 void MauiMan::InputDevicesManager::onKeyboardOptionsChanged(const QString &keyboardOptions)
 {
-    if (m_keyboardOptions == keyboardOptions)
+    Q_UNUSED(keyboardOptions);
+    const QString previousKeyboardOptions = m_keyboardOptions;
+
+    loadSettings();
+    if (m_keyboardOptions == previousKeyboardOptions)
         return;
 
-    m_keyboardOptions = keyboardOptions;
     Q_EMIT keyboardOptionsChanged(m_keyboardOptions);
 }
 
 void MauiMan::InputDevicesManager::onKeyboardRulesChanged(const QString &keyboardRules)
 {
-    if (m_keyboardRules == keyboardRules)
+    Q_UNUSED(keyboardRules);
+    const QString previousKeyboardRules = m_keyboardRules;
+
+    loadSettings();
+    if (m_keyboardRules == previousKeyboardRules)
         return;
 
-    m_keyboardRules = keyboardRules;
     Q_EMIT keyboardRulesChanged(m_keyboardRules);
 }
 
 void MauiMan::InputDevicesManager::onKeyboardVariantChanged(const QString &keyboardVariant)
 {
-    if (m_keyboardVariant == keyboardVariant)
+    Q_UNUSED(keyboardVariant);
+    const QString previousKeyboardVariant = m_keyboardVariant;
+
+    loadSettings();
+    if (m_keyboardVariant == previousKeyboardVariant)
         return;
 
-    m_keyboardVariant = keyboardVariant;
     Q_EMIT keyboardVariantChanged(m_keyboardVariant);
 }
 
@@ -158,8 +235,15 @@ void MauiMan::InputDevicesManager::sync(const QString &key, const QVariant &valu
 {
     if (m_interface && m_interface->isValid())
     {
-        m_interface->call(key, value);
+        const QDBusMessage reply = m_interface->call(key, value);
+        if (reply.type() == QDBusMessage::ErrorMessage)
+        {
+            qWarning() << "InputDevicesManager::sync failed for call" << key << ":" << reply.errorMessage();
+        }
+        return;
     }
+
+    qWarning() << "InputDevicesManager::sync skipped (no valid org.mauiman.InputDevices interface) for call:" << key;
 }
 
 void MauiMan::InputDevicesManager::setConnections()
@@ -171,38 +255,53 @@ void MauiMan::InputDevicesManager::setConnections()
         m_interface = nullptr;
     }
 
-    m_interface = new QDBusInterface (QStringLiteral("org.mauiman.Manager"),
-                                      QStringLiteral("/InputDevices"),
-                                      QStringLiteral("org.mauiman.InputDevices"),
-                                      QDBusConnection::sessionBus(), this);
+    m_interface = new OrgMauimanInputDevicesInterface(QStringLiteral("org.mauiman.Manager"),
+                                                      QStringLiteral("/InputDevices"),
+                                                      QDBusConnection::sessionBus(),
+                                                      this);
     if (m_interface->isValid())
     {
-        connect(m_interface, SIGNAL(keyboardLayoutChanged(QString)), this, SLOT(onKeyboardLayoutChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardModelChanged(QString)), this, SLOT(onKeyboardModelChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardRulesChanged(QString)), this, SLOT(onKeyboardRulesChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardOptionsChanged(QString)), this, SLOT(onKeyboardOptionsChanged(QString)));
-        connect(m_interface, SIGNAL(keyboardVariantChanged(QString)), this, SLOT(onKeyboardVariantChanged(QString)));
-
+        connect(m_interface, &OrgMauimanInputDevicesInterface::keyboardLayoutChanged, this, &InputDevicesManager::onKeyboardLayoutChanged);
+        connect(m_interface, &OrgMauimanInputDevicesInterface::keyboardModelChanged, this, &InputDevicesManager::onKeyboardModelChanged);
+        connect(m_interface, &OrgMauimanInputDevicesInterface::keyboardRulesChanged, this, &InputDevicesManager::onKeyboardRulesChanged);
+        connect(m_interface, &OrgMauimanInputDevicesInterface::keyboardOptionsChanged, this, &InputDevicesManager::onKeyboardOptionsChanged);
+        connect(m_interface, &OrgMauimanInputDevicesInterface::keyboardVariantChanged, this, &InputDevicesManager::onKeyboardVariantChanged);
+        loadSettings();
     }
 }
 
 void MauiMan::InputDevicesManager::loadSettings()
 {
-    m_settings->beginModule(QStringLiteral("InputDevices"));
-
     if(m_interface && m_interface->isValid())
     {
-        m_keyboardLayout = m_interface->property("keyboardLayout").toString();
-        m_keyboardModel = m_interface->property("keyboardModel").toString();
-        m_keyboardOptions = m_interface->property("keyboardOptions").toString();
-        m_keyboardRules = m_interface->property("keyboardRules").toString();
-        m_keyboardVariant = m_interface->property("keyboardVariant").toString();
-        return;
-    }
+        const QVariant keyboardLayout = m_interface->property("keyboardLayout");
+        if (keyboardLayout.isValid())
+        {
+            m_keyboardLayout = keyboardLayout.toString();
+        }
 
-    m_keyboardLayout =  m_settings->load(QStringLiteral("KeyboardLayout"), m_keyboardLayout).toString();
-    m_keyboardModel = m_settings->load(QStringLiteral("KeyboardModel"), m_keyboardModel).toString();
-    m_keyboardOptions = m_settings->load(QStringLiteral("KeyboardOptions"), m_keyboardOptions).toString();
-    m_keyboardRules = m_settings->load(QStringLiteral("KeyboardRules"), m_keyboardRules).toString();
-    m_keyboardVariant = m_settings->load(QStringLiteral("KeyboardVariant"), m_keyboardVariant).toString();
+        const QVariant keyboardModel = m_interface->property("keyboardModel");
+        if (keyboardModel.isValid())
+        {
+            m_keyboardModel = keyboardModel.toString();
+        }
+
+        const QVariant keyboardOptions = m_interface->property("keyboardOptions");
+        if (keyboardOptions.isValid())
+        {
+            m_keyboardOptions = keyboardOptions.toString();
+        }
+
+        const QVariant keyboardRules = m_interface->property("keyboardRules");
+        if (keyboardRules.isValid())
+        {
+            m_keyboardRules = keyboardRules.toString();
+        }
+
+        const QVariant keyboardVariant = m_interface->property("keyboardVariant");
+        if (keyboardVariant.isValid())
+        {
+            m_keyboardVariant = keyboardVariant.toString();
+        }
+    }
 }

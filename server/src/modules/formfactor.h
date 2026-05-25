@@ -1,59 +1,40 @@
 #pragma once
 
-#include <QObject>
-
+#include "FormFactorBase.h"
 #include "modules/formfactormanager.h"
 
-class FormFactor : public QObject
+class FormFactor : public FormFactorBase
 {
     Q_OBJECT
-    Q_PROPERTY(uint preferredMode READ preferredMode WRITE setPreferredMode NOTIFY preferredModeChanged)
+    Q_PROPERTY(uint version READ version CONSTANT)
+
+    // Read-only capabilities derived at runtime by MauiMan::FormFactorInfo;
+    // not in the generated base because they aren't persisted.
     Q_PROPERTY(uint bestMode READ bestMode NOTIFY bestModeChanged)
     Q_PROPERTY(uint defaultMode READ defaultMode CONSTANT)
-
     Q_PROPERTY(bool hasKeyboard READ hasKeyboard NOTIFY hasKeyboardChanged)
     Q_PROPERTY(bool hasTouchscreen READ hasTouchscreen NOTIFY hasTouchscreenChanged)
     Q_PROPERTY(bool hasMouse READ hasMouse NOTIFY hasMouseChanged)
     Q_PROPERTY(bool hasTouchpad READ hasTouchpad NOTIFY hasTouchpadChanged)
-    Q_PROPERTY(bool forceTouchScreen READ forceTouchScreen WRITE setForceTouchScreen NOTIFY forceTouchScreenChanged)
 
 public:
     explicit FormFactor(QObject *parent = nullptr);
 
-    /**
-     * @brief preferredMode
-     * Mode picked manually by the user as the preffered one over the default and best fit modes.
-     * 0 - Desktop
-     * 1 - Tablet
-     * 2 - Phone
-     * @return
-     */
-    uint preferredMode() const;
-    void setPreferredMode(uint preferredMode);
+    uint version() const { return 1u; }
 
-    /**
-     * @brief bestMode
-     * The result of computing different variables such as inputs, architecture, and screensize resulting in what mode is the best fit.
-     * @return
-     */
-    uint bestMode() const;
+    uint bestMode() const { return m_bestMode; }
+    uint defaultMode() const { return m_defaultMode; }
+    bool hasKeyboard() const { return m_hasKeyboard; }
+    bool hasTouchscreen() const { return m_hasTouchscreen; }
+    bool hasMouse() const { return m_hasMouse; }
+    bool hasTouchpad() const { return m_hasTouchpad; }
 
-    /**
-     * @brief defaultMode
-     * @return
-     */
-    uint defaultMode() const;
-
-    bool hasKeyboard() const;
-
-    bool hasTouchscreen() const;
-
-    bool hasMouse() const;
-
-    bool hasTouchpad() const;
-
-    bool forceTouchScreen() const;
-    void setForceTouchScreen(bool newForceTouchScreen);
+Q_SIGNALS:
+    void bestModeChanged(uint bestMode);
+    void hasKeyboardChanged(bool hasKeyboard);
+    void hasTouchscreenChanged(bool hasTouchscreen);
+    void hasMouseChanged(bool hasMouse);
+    void hasTouchpadChanged(bool hasTouchpad);
 
 private Q_SLOTS:
     void setBestMode(uint bestMode);
@@ -64,29 +45,10 @@ private Q_SLOTS:
 
 private:
     MauiMan::FormFactorInfo *m_manager;
-    uint m_preferredMode = MauiMan::FormFactorManager::DefaultValues::defaultMode;
-
     uint m_bestMode = MauiMan::FormFactorManager::DefaultValues::defaultMode;
-
     uint m_defaultMode = MauiMan::FormFactorManager::DefaultValues::defaultMode;
-
     bool m_hasKeyboard = false;
-
     bool m_hasTouchscreen = false;
-
     bool m_hasMouse = false;
-
-    bool m_hasTouchpad= false;
-
-    bool m_forceTouchScreen = false;
-
-Q_SIGNALS:
-    void preferredModeChanged(uint preferredMode);
-    void bestModeChanged(uint bestMode);
-    void defaultModeChanged(uint defaultMode);
-    void hasKeyboardChanged(bool hasKeyboard);
-    void hasTouchscreenChanged(bool hasTouchscreen);
-    void hasMouseChanged(bool hasMouse);
-    void hasTouchpadChanged(bool hasTouchpad);
-    void forceTouchScreenChanged(bool forceTouchScreen);
+    bool m_hasTouchpad = false;
 };

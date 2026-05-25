@@ -2,13 +2,17 @@
 #include <QObject>
 #include "mauiman_export.h"
 
-class QDBusInterface;
+class OrgMauimanInputDevicesInterface;
 namespace MauiMan
 {
-    class SettingsStore;
-    
     /**
-     * @brief The InputDevicesManager class exposes all the system input devices properties
+     * @brief The InputDevicesManager class exposes runtime input-device related
+     * properties through MauiMan's D-Bus facade. Values are not persisted by
+     * MauiMan. Writes are best-effort and may be ignored when no writable
+     * upstream source is available.
+     *
+     * This API is intended for observing current keyboard-related runtime
+     * values and receiving cross-application change notifications.
      */
     class MAUIMAN_EXPORT InputDevicesManager : public QObject
     {
@@ -41,7 +45,7 @@ namespace MauiMan
     public:
         
         /**
-         * The InputDevices module default values.
+         * @brief The InputDevices module default values.
          */
         struct DefaultValues
         {
@@ -76,8 +80,7 @@ namespace MauiMan
         void onKeyboardVariantChanged (const QString &keyboardVariant);
         
     private:
-        QDBusInterface *m_interface = nullptr;
-        MauiMan::SettingsStore *m_settings;
+        OrgMauimanInputDevicesInterface *m_interface = nullptr;
         
         void sync(const QString &key, const QVariant &value);
         void setConnections();

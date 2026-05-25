@@ -7,14 +7,18 @@
 #include "mauiman_export.h"
 
 class QInputDevice;
-
-class QDBusInterface;
+class OrgMauimanFormFactorInterface;
 namespace MauiMan
 {
     class SettingsStore;
 
     /**
-     * @brief The FormFactoInfo class contains information about the input devices available in the current system.
+     * @brief The FormFactorInfo class exposes runtime capabilities used to
+     * determine the best UI mode for the current device.
+     *
+     * This class is read-only and continuously reflects current hardware and
+     * screen characteristics such as keyboard, mouse, touch support, screen
+     * size, and screen orientation.
      */
     class MAUIMAN_EXPORT FormFactorInfo : public QObject
     {
@@ -95,6 +99,8 @@ namespace MauiMan
 
             static inline const uint defaultMode = DefaultValues::getDefaultMode();
             static inline const bool hasTouchscreen = DefaultValues::getHasTouchScreen();
+            // Used by FormFactorManager via inherited DefaultValues lookup.
+            static inline const bool forceTouchScreen = false;
         } ;
 
         explicit FormFactorInfo(QObject *parent);
@@ -143,14 +149,24 @@ namespace MauiMan
     };
 
     /**
-     * @brief The FormFactorManager class exposes all the system form factor properties.
+     * @brief The FormFactorManager class exposes persisted user preferences
+     * related to form-factor behavior.
+     *
+     * It extends FormFactorInfo runtime data with preferences such as
+     * `preferredMode` and `forceTouchScreen`.
      */
     class MAUIMAN_EXPORT FormFactorManager : public FormFactorInfo
     {
         Q_OBJECT
         /**
+         * Schema version of the FormFactor module. Bumped when properties are
+         * added or removed. Lets consumers feature-detect at runtime.
+         */
+        Q_PROPERTY(uint version READ version CONSTANT)
+
+        /**
          * The preferred mode to display information. The possible values are:
-         * - 0 Desktop 
+         * - 0 Desktop
          * - 1 Tablet
          * - 2 Phone
          */
@@ -165,6 +181,8 @@ namespace MauiMan
     public:
         explicit FormFactorManager(QObject *parent = nullptr);
 
+        uint version() const { return 1u; }
+
         [[nodiscard]] uint preferredMode() const;
         void setPreferredMode(uint preferredMode);        
 
@@ -176,13 +194,14 @@ namespace MauiMan
         void onForceTouchScreenChanged(bool value);
 
     private:
-        QDBusInterface *m_interface = nullptr;
+        OrgMauimanFormFactorInterface *m_interface = nullptr;
         MauiMan::SettingsStore *m_settings;
 
         uint m_preferredMode;
         bool m_forceTouchScreen = false;
 
-        void sync(const QString &key, const QVariant &value);
+        bool syncPreferredMode(uint preferredMode);
+        bool syncForceTouchScreen(bool forceTouchScreen);
         void setConnections();
         void loadSettings();
 

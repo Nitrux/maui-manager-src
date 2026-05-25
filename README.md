@@ -2,7 +2,7 @@
 
 ![](https://mauikit.org/wp-content/uploads/2018/12/maui_project_logo.png)
 
-_Global settings and synchronization backend for Maui Apps and Maui Shell._
+_Settings and synchronization backend for MauiKit Apps._
 
 # Issues
 

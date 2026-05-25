@@ -3,14 +3,14 @@
 #include <QObject>
 #include "mauiman_export.h"
 
-class QDBusInterface;
+class OrgMauimanAccessibilityInterface;
 namespace MauiMan
 {
-
-class SettingsStore;
-
 /**
- * @brief The AccessibilityManager class contains properties for changing visual and hearing clues.
+ * @brief The AccessibilityManager class exposes runtime accessibility-related
+ * properties through MauiMan's D-Bus facade. Values are not persisted by
+ * MauiMan. Writes are best-effort and may be ignored when no writable
+ * upstream source is available.
  */
 class MAUIMAN_EXPORT AccessibilityManager : public QObject
 {
@@ -65,8 +65,7 @@ private Q_SLOTS:
     void onPlaySoundsChanged(bool playSounds);
 
 private:
-    QDBusInterface *m_interface = nullptr;
-    MauiMan::SettingsStore *m_settings;
+    OrgMauimanAccessibilityInterface *m_interface = nullptr;
 
     bool m_singleClick = AccessibilityManager::DefaultValues::singleClick;
     uint m_scrollBarPolicy = AccessibilityManager::DefaultValues::scrollBarPolicy;

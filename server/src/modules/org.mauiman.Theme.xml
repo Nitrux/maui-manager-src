@@ -66,6 +66,7 @@
     <arg name="allow" type="b" direction="in"/>
 </method>
 
+<property name="version" type="u" access="read"/>
 <property name="accentColor" type="s" access="read"/>
 <property name="styleType" type="i" access="read"/>
 <property name="iconTheme" type="s" access="read"/>

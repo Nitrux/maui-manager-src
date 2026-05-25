@@ -17,6 +17,7 @@
 <arg name="showWallpaper" type="b" direction="in"/>
 </method>
 
+<property name="version" type="u" access="read"/>
 <property name="wallpaperSource" type="s" access="read"/>
 <property name="dimWallpaper" type="b" access="read"/>
 <property name="fitWallpaper" type="b" access="read"/>

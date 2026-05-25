@@ -4,6 +4,26 @@ include_directories(
 
     ${CMAKE_CURRENT_SOURCE_DIR}/modules)
 
+set(mauiman_dbus_client_SRCS)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.FormFactor.xml
+    formfactor_interface)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Background.xml
+    background_interface)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Theme.xml
+    theme_interface)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Screen.xml
+    screen_interface)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.InputDevices.xml
+    inputdevices_interface)
+qt_add_dbus_interface(mauiman_dbus_client_SRCS
+    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Accessibility.xml
+    accessibility_interface)
+
 set(mauiman_HDRS
     settingsstore.h
     modules/backgroundmanager.h
@@ -22,7 +42,8 @@ set(mauiman_SRCS
     modules/formfactormanager.cpp
     modules/accessibilitymanager.cpp
     modules/inputdevicesmanager.cpp
-    mauimanutils.cpp)
+    mauimanutils.cpp
+    ${mauiman_dbus_client_SRCS})
 
 add_library(${PROJECT_NAME}${MAUI_MAJOR_VERSION}
     SHARED
@@ -53,3 +74,21 @@ install(FILES
     COMPONENT Devel)
 
 install(TARGETS ${PROJECT_NAME}${MAUI_MAJOR_VERSION} EXPORT MauiMan${MAUI_MAJOR_VERSION}Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+
+# QML plugin module: lets apps `import org.mauiman 1.0` and use the manager
+# QObjects directly without having to qmlRegisterType in each app.
+find_package(Qt${QT_MAJOR_VERSION} ${REQUIRED_QT_VERSION} CONFIG QUIET COMPONENTS Qml)
+if(Qt${QT_MAJOR_VERSION}Qml_FOUND AND COMMAND ecm_add_qml_module)
+    ecm_add_qml_module(MauiManQml URI "org.mauiman" VERSION 1.0
+        GENERATE_PLUGIN_SOURCE)
+
+    target_sources(MauiManQml PRIVATE
+        qmlplugin.cpp)
+
+    target_link_libraries(MauiManQml
+        PRIVATE
+        ${PROJECT_NAME}${MAUI_MAJOR_VERSION}
+        Qt${QT_MAJOR_VERSION}::Qml)
+
+    ecm_finalize_qml_module(MauiManQml DESTINATION ${KDE_INSTALL_QMLDIR})
+endif()

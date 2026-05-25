@@ -16,11 +16,12 @@ class MAUIMAN_EXPORT MauiManUtils : public QObject
 
 public:
     explicit MauiManUtils(QObject *parent = nullptr);
+    static MauiManUtils *instance();
 
     bool serverRunning() const;
 
     /**
-     * @brief Invoke the `MauiManServer4` application to be launched.
+     * @brief Invoke the `MauiManServer` application to be launched.
      */
     static void startServer();
 
@@ -60,4 +61,3 @@ Q_SIGNALS:
 private:
     bool m_serverRunning = false;
 };
-

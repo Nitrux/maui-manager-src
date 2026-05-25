@@ -1,24 +1,24 @@
 #include "backgroundmanager.h"
 
+#include "background_interface.h"
 #include "settingsstore.h"
 #include "mauimanutils.h"
 
 #include <QDebug>
-#include <QDBusInterface>
+#include <QDBusPendingReply>
 
 using namespace MauiMan;
 BackgroundManager::BackgroundManager(QObject *parent) : QObject(parent)
   ,m_settings(new MauiMan::SettingsStore(this))
 {
-    qDebug( " INIT BACKGORUND MANAGER");
-    auto server = new MauiManUtils(this);
+    auto server = MauiManUtils::instance();
     if(server->serverRunning())
     {
         this->setConnections();
 
     }
 
-    connect(server, &MauiManUtils::serverRunningChanged, [this](bool state)
+    connect(server, &MauiManUtils::serverRunningChanged, this, [this](bool state)
     {
         if(state)
         {
@@ -45,7 +45,7 @@ bool BackgroundManager::fitWallpaper() const
     return m_fitWallpaper;
 }
 
-QString BackgroundManager::solidColor() const
+QColor BackgroundManager::solidColor() const
 {
     return m_solidColor;
 }
@@ -61,8 +61,11 @@ void BackgroundManager::setWallpaperSource(QString wallpaperSource)
         return;
 
     m_wallpaperSource = wallpaperSource;
-    m_settings->save(QStringLiteral("Wallpaper"), m_wallpaperSource);
-    sync(QStringLiteral("setWallpaperSource"), m_wallpaperSource);
+    if (!sync(QStringLiteral("setWallpaperSource"), m_wallpaperSource))
+    {
+        // Persist locally only when DBus write fails/unavailable.
+        m_settings->save(QStringLiteral("Wallpaper"), m_wallpaperSource);
+    }
     Q_EMIT wallpaperSourceChanged(m_wallpaperSource);
 }
 
@@ -72,8 +75,10 @@ void BackgroundManager::setDimWallpaper(bool dimWallpaper)
         return;
 
     m_dimWallpaper = dimWallpaper;
-    m_settings->save(QStringLiteral("DimWallpaper"), m_dimWallpaper);
-    sync(QStringLiteral("setDimWallpaper"), m_dimWallpaper);
+    if (!sync(QStringLiteral("setDimWallpaper"), m_dimWallpaper))
+    {
+        m_settings->save(QStringLiteral("DimWallpaper"), m_dimWallpaper);
+    }
     Q_EMIT dimWallpaperChanged(m_dimWallpaper);
 }
 
@@ -83,19 +88,23 @@ void BackgroundManager::setFitWallpaper(bool fitWallpaper)
         return;
 
     m_fitWallpaper = fitWallpaper;
-    m_settings->save(QStringLiteral("FitWallpaper"), m_fitWallpaper);
-    sync(QStringLiteral("setFitWallpaper"), m_fitWallpaper);
+    if (!sync(QStringLiteral("setFitWallpaper"), m_fitWallpaper))
+    {
+        m_settings->save(QStringLiteral("FitWallpaper"), m_fitWallpaper);
+    }
     Q_EMIT fitWallpaperChanged(m_fitWallpaper);
 }
 
-void BackgroundManager::setSolidColor(QString solidColor)
+void BackgroundManager::setSolidColor(const QColor &solidColor)
 {
     if (m_solidColor == solidColor)
         return;
 
     m_solidColor = solidColor;
-    m_settings->save(QStringLiteral("SolidColor"), m_solidColor);
-    sync(QStringLiteral("setSolidColor"), m_solidColor);
+    if (!sync(QStringLiteral("setSolidColor"), m_solidColor.name()))
+    {
+        m_settings->save(QStringLiteral("SolidColor"), m_solidColor.name());
+    }
     Q_EMIT solidColorChanged(m_solidColor);
 }
 
@@ -105,8 +114,10 @@ void BackgroundManager::setShowWallpaper(bool showWallpaper)
         return;
 
     m_showWallpaper = showWallpaper;
-    sync(QStringLiteral("setShowWallpaper"), m_showWallpaper);
-    m_settings->save(QStringLiteral("ShowWallpaper"), m_showWallpaper);
+    if (!sync(QStringLiteral("setShowWallpaper"), m_showWallpaper))
+    {
+        m_settings->save(QStringLiteral("ShowWallpaper"), m_showWallpaper);
+    }
     Q_EMIT showWallpaperChanged(m_showWallpaper);
 }
 
@@ -135,10 +146,11 @@ void BackgroundManager::onWallpaperChanged(const QString &wallpaperSource)
 
 void BackgroundManager::onSolidColorChanged(const QString &solidColor)
 {
-    if (m_solidColor == solidColor)
+    const QColor incoming(solidColor);
+    if (m_solidColor == incoming)
         return;
 
-    m_solidColor = solidColor;
+    m_solidColor = incoming;
     Q_EMIT solidColorChanged(m_solidColor);
 }
 
@@ -169,12 +181,44 @@ void BackgroundManager::onShowWallpaperChanged(const bool &showWallpaper)
     Q_EMIT showWallpaperChanged(m_showWallpaper);
 }
 
-void BackgroundManager::sync(const QString &key, const QVariant &value)
+bool BackgroundManager::sync(const QString &key, const QVariant &value)
 {
     if (m_interface && m_interface->isValid())
     {
-        m_interface->call(key, value);
+        auto finishCall = [key](QDBusPendingReply<> reply) {
+            reply.waitForFinished();
+            if (!reply.isError())
+            {
+                return true;
+            }
+
+            qWarning() << "BackgroundManager::sync failed for call" << key << ":" << reply.error().message();
+            return false;
+        };
+
+        if (key == QStringLiteral("setWallpaperSource"))
+        {
+            return finishCall(m_interface->setWallpaperSource(value.toString()));
+        } else if (key == QStringLiteral("setDimWallpaper"))
+        {
+            return finishCall(m_interface->setDimWallpaper(value.toBool()));
+        } else if (key == QStringLiteral("setFitWallpaper"))
+        {
+            return finishCall(m_interface->setFitWallpaper(value.toBool()));
+        } else if (key == QStringLiteral("setSolidColor"))
+        {
+            return finishCall(m_interface->setSolidColor(value.toString()));
+        } else if (key == QStringLiteral("setShowWallpaper"))
+        {
+            return finishCall(m_interface->setShowWallpaper(value.toBool()));
+        } else
+        {
+            qWarning() << "BackgroundManager::sync received unknown method key:" << key;
+            return false;
+        }
     }
+
+    return false;
 }
 
 void BackgroundManager::setConnections()
@@ -186,17 +230,17 @@ void BackgroundManager::setConnections()
         m_interface = nullptr;
     }
 
-    m_interface = new QDBusInterface (QStringLiteral("org.mauiman.Manager"),
-                                      QStringLiteral("/Background"),
-                                      QStringLiteral("org.mauiman.Background"),
-                                      QDBusConnection::sessionBus(), this);
+    m_interface = new OrgMauimanBackgroundInterface(QStringLiteral("org.mauiman.Manager"),
+                                                    QStringLiteral("/Background"),
+                                                    QDBusConnection::sessionBus(),
+                                                    this);
     if (m_interface->isValid())
     {
-        connect(m_interface, SIGNAL(wallpaperSourceChanged(QString)), this, SLOT(onWallpaperChanged(QString)));
-        connect(m_interface, SIGNAL(solidColorChanged(QString)), this, SLOT(onSolidColorChanged(QString)));
-        connect(m_interface, SIGNAL(fitWallpaperChanged(bool)), this, SLOT(onFitWallpaperChanged(bool)));
-        connect(m_interface, SIGNAL(showWallpaperChanged(bool)), this, SLOT(onShowWallpaperChanged(bool)));
-        connect(m_interface, SIGNAL(dimWallpaperChanged(bool)), this, SLOT(onDimWallpaperChanged(bool)));
+        connect(m_interface, &OrgMauimanBackgroundInterface::wallpaperSourceChanged, this, &BackgroundManager::onWallpaperChanged);
+        connect(m_interface, &OrgMauimanBackgroundInterface::solidColorChanged, this, &BackgroundManager::onSolidColorChanged);
+        connect(m_interface, &OrgMauimanBackgroundInterface::fitWallpaperChanged, this, &BackgroundManager::onFitWallpaperChanged);
+        connect(m_interface, &OrgMauimanBackgroundInterface::showWallpaperChanged, this, &BackgroundManager::onShowWallpaperChanged);
+        connect(m_interface, &OrgMauimanBackgroundInterface::dimWallpaperChanged, this, &BackgroundManager::onDimWallpaperChanged);
 
     }
 }
@@ -207,17 +251,21 @@ void BackgroundManager::loadSettings()
 
     if(m_interface && m_interface->isValid())
     {
+        // When server is available, DBus properties are the source of truth.
         m_wallpaperSource = m_interface->property("wallpaperSource").toString();
         m_dimWallpaper = m_interface->property("dimWallpaper").toBool();
         m_showWallpaper = m_interface->property("showWallpaper").toBool();
         m_fitWallpaper = m_interface->property("fitWallpaper").toBool();
-        m_solidColor = m_interface->property("solidColor").toString();
+        m_solidColor = QColor(m_interface->property("solidColor").toString());
+        m_settings->endModule();
         return;
     }
 
+    // Offline fallback: use cached local settings until DBus service appears.
     m_wallpaperSource = m_settings->load(QStringLiteral("Wallpaper"), m_wallpaperSource).toString();
     m_dimWallpaper = m_settings->load(QStringLiteral("DimWallpaper"), m_dimWallpaper).toBool();
     m_showWallpaper = m_settings->load(QStringLiteral("ShowWallpaper"), m_showWallpaper).toBool();
     m_fitWallpaper = m_settings->load(QStringLiteral("FitWallpaper"), m_fitWallpaper).toBool();
-    m_solidColor = m_settings->load(QStringLiteral("SolidColor"), m_solidColor).toString();
+    m_solidColor = QColor(m_settings->load(QStringLiteral("SolidColor"), m_solidColor.name()).toString());
+    m_settings->endModule();
 }

@@ -5,6 +5,9 @@ using namespace MauiMan;
 SettingsStore::SettingsStore(QObject *parent) : QObject(parent)
   ,m_settings(new QSettings(QStringLiteral("Maui"), QStringLiteral("MauiMan"), this))
 {
+    // Native QSettings location for this org/app pair is ~/.config/Maui/MauiMan.conf.
+    // MauiMan intentionally has no separate runtime defaults layer; defaults come
+    // from code and any seeded per-user file (for example via /etc/skel).
 }
 
 QVariant SettingsStore::load(const QString &key, const QVariant &defaultValue)

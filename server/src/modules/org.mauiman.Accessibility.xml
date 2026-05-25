@@ -2,18 +2,6 @@
 <node>
 <interface name="org.mauiman.Accessibility">
 
-<method name="setSingleClick">
-<arg name="singleClick" type="b" direction="in"/>
-</method>
-
-<method name="setScrollBarPolicy">
-<arg name="scrollBarPolicy" type="u" direction="in"/>
-</method>
-
-<method name="setPlaySounds">
-<arg name="playSounds" type="b" direction="in"/>
-</method>
-
 <property name="singleClick" type="b" access="read"/>
 <property name="scrollBarPolicy" type="u" access="read"/>
 <property name="playSounds" type="b" access="read"/>

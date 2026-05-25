@@ -4,7 +4,6 @@
 #include <QtDBus/QDBusConnectionInterface>
 #include <QtDBus/QDBusServiceWatcher>
 
-#include <QDebug>
 #include <QStringList>
 
 #include <QProcess>
@@ -22,19 +21,25 @@ MauiManUtils::MauiManUtils(QObject *parent)
         m_serverRunning = registeredServices.value().contains(mauimanInterface);
     }
 
-    auto watcher = new QDBusServiceWatcher(mauimanInterface, QDBusConnection::sessionBus(), QDBusServiceWatcher::WatchForRegistration | QDBusServiceWatcher::WatchForUnregistration, this);
+    auto watcher = new QDBusServiceWatcher(mauimanInterface, QDBusConnection::sessionBus(),
+                                           QDBusServiceWatcher::WatchForRegistration | QDBusServiceWatcher::WatchForUnregistration,
+                                           this);
 
-    connect(watcher, &QDBusServiceWatcher::serviceRegistered, [=](const QString &name) {
-        qDebug() << "Connected to MauiMan server" << name;
+    connect(watcher, &QDBusServiceWatcher::serviceRegistered, this, [this] {
         m_serverRunning = true;
         Q_EMIT serverRunningChanged(m_serverRunning);
     });
 
-    connect(watcher, &QDBusServiceWatcher::serviceUnregistered, [=](const QString &name) {
-        qDebug() << "Disconnected to MauiMan server" << name;
+    connect(watcher, &QDBusServiceWatcher::serviceUnregistered, this, [this] {
         m_serverRunning = false;
         Q_EMIT serverRunningChanged(m_serverRunning);
     });
+}
+
+MauiManUtils *MauiManUtils::instance()
+{
+    static MauiManUtils *s_instance = new MauiManUtils();
+    return s_instance;
 }
 
 bool MauiManUtils::serverRunning() const
@@ -65,15 +70,15 @@ QString MauiManUtils::currentDesktopSession()
 
 bool MauiManUtils::isMauiSession()
 {
-    return currentDesktopSession() == QStringLiteral("CASK");
+    return currentDesktopSession().compare(QStringLiteral("CASK"), Qt::CaseInsensitive) == 0;
 }
 
 bool MauiManUtils::isPlasmaSession()
 {
-    return currentDesktopSession() == QStringLiteral("KDE");
+    return currentDesktopSession().compare(QStringLiteral("KDE"), Qt::CaseInsensitive) == 0;
 }
 
 bool MauiManUtils::isGnomeSession()
 {
-    return currentDesktopSession() == QStringLiteral("Gnome");
+    return currentDesktopSession().compare(QStringLiteral("GNOME"), Qt::CaseInsensitive) == 0;
 }

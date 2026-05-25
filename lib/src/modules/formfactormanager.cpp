@@ -1,25 +1,52 @@
 #include "formfactormanager.h"
 
+#include "formfactor_interface.h"
 #include "settingsstore.h"
 #include "mauimanutils.h"
 
-#include <QDebug>
 #include <QScreen>
 #include <QGuiApplication>
 
-#include <QDBusInterface>
+#include <QDebug>
+#include <QDBusPendingReply>
 
 #include <QInputDevice>
 
 using namespace MauiMan;
 
 
-void FormFactorManager::sync(const QString &key, const QVariant &value)
+bool FormFactorManager::syncPreferredMode(uint preferredMode)
 {
     if (m_interface && m_interface->isValid())
     {
-        m_interface->call(key, value);
+        auto reply = m_interface->setPreferredMode(preferredMode);
+        reply.waitForFinished();
+        if (!reply.isError())
+        {
+            return true;
+        }
+
+        qWarning() << "FormFactorManager::syncPreferredMode failed:" << reply.error().message();
     }
+
+    return false;
+}
+
+bool FormFactorManager::syncForceTouchScreen(bool forceTouchScreen)
+{
+    if (m_interface && m_interface->isValid())
+    {
+        auto reply = m_interface->setForceTouchScreen(forceTouchScreen);
+        reply.waitForFinished();
+        if (!reply.isError())
+        {
+            return true;
+        }
+
+        qWarning() << "FormFactorManager::syncForceTouchScreen failed:" << reply.error().message();
+    }
+
+    return false;
 }
 
 void FormFactorManager::setConnections()
@@ -31,15 +58,15 @@ void FormFactorManager::setConnections()
         m_interface = nullptr;
     }
 
-    m_interface = new QDBusInterface(QStringLiteral("org.mauiman.Manager"),
-                                     QStringLiteral("/FormFactor"),
-                                     QStringLiteral("org.mauiman.FormFactor"),
-                                     QDBusConnection::sessionBus(), this);
+    m_interface = new OrgMauimanFormFactorInterface(QStringLiteral("org.mauiman.Manager"),
+                                                    QStringLiteral("/FormFactor"),
+                                                    QDBusConnection::sessionBus(),
+                                                    this);
 
     if (m_interface->isValid())
     {
-        connect(m_interface, SIGNAL(preferredModeChanged(uint)), this, SLOT(onPreferredModeChanged(uint)));
-        connect(m_interface, SIGNAL(forceTouchScreenChanged(bool)), this, SLOT(onForceTouchScreenChanged(bool)));
+        connect(m_interface, &OrgMauimanFormFactorInterface::preferredModeChanged, this, &FormFactorManager::onPreferredModeChanged);
+        connect(m_interface, &OrgMauimanFormFactorInterface::forceTouchScreenChanged, this, &FormFactorManager::onForceTouchScreenChanged);
     }
 }
 
@@ -49,27 +76,29 @@ void FormFactorManager::loadSettings()
 
     if(m_interface && m_interface->isValid())
     {
+        // When server is available, DBus properties are the source of truth.
         m_preferredMode = m_interface->property("preferredMode").toUInt();
         m_forceTouchScreen = m_interface->property("forceTouchScreen").toBool();
+        m_settings->endModule();
         return;
     }
 
+    // Offline fallback: use cached local settings until DBus service appears.
     m_preferredMode = m_settings->load(QStringLiteral("PreferredMode"), m_preferredMode).toUInt();
     m_forceTouchScreen = m_settings->load(QStringLiteral("ForceTouchScreen"), m_forceTouchScreen).toBool();
+    m_settings->endModule();
 }
 
 FormFactorManager::FormFactorManager(QObject *parent) : MauiMan::FormFactorInfo(parent)
   ,m_settings(new MauiMan::SettingsStore(this))
 {
-    qDebug( " INIT FORMFACTOR MANAGER");
-
-    auto server = new MauiManUtils(this);
+    auto server = MauiManUtils::instance();
     if(server->serverRunning())
     {
         this->setConnections();
     }
 
-    connect(server, &MauiManUtils::serverRunningChanged, [this](bool state)
+    connect(server, &MauiManUtils::serverRunningChanged, this, [this](bool state)
     {
         if(state)
         {
@@ -123,8 +152,11 @@ void FormFactorManager::setPreferredMode(uint preferredMode)
 
     m_preferredMode = preferredMode;
 
-    sync(QStringLiteral("setPreferredMode"), m_preferredMode);
-    m_settings->save(QStringLiteral("PreferredMode"), m_preferredMode);
+    if (!syncPreferredMode(m_preferredMode))
+    {
+        // Persist locally only when DBus write fails/unavailable.
+        m_settings->save(QStringLiteral("PreferredMode"), m_preferredMode);
+    }
 
     Q_EMIT preferredModeChanged(m_preferredMode);
 }
@@ -141,8 +173,11 @@ void FormFactorManager::setForceTouchScreen(bool newForceTouchScreen)
 
     m_forceTouchScreen = newForceTouchScreen;
 
-    sync(QStringLiteral("setForceTouchScreen"), m_forceTouchScreen);
-    m_settings->save(QStringLiteral("ForceTouchScreen"), m_forceTouchScreen);
+    if (!syncForceTouchScreen(m_forceTouchScreen))
+    {
+        // Persist locally only when DBus write fails/unavailable.
+        m_settings->save(QStringLiteral("ForceTouchScreen"), m_forceTouchScreen);
+    }
 
     Q_EMIT forceTouchScreenChanged(m_forceTouchScreen);
 }
@@ -238,28 +273,15 @@ Qt::ScreenOrientation FormFactorInfo::screenOrientation()
 
 void FormFactorInfo::checkInputs(const QList<const QInputDevice *> &devices)
 {
-    for (const auto &dev : devices) {
-        qDebug() << "DEVICE:::" << dev->type();
-    }
-
-    auto hasType = [devices](QInputDevice::DeviceType type) -> bool
-    {
-        qDebug() << "CHECXKING IF DEVICE HAS TYPE" << type;
-        auto res= std::find_if(devices.constBegin(), devices.constEnd(), [type](const QInputDevice *device)
-        {
-            return device->type() == type;
-        });
-
-        return res != std::end(devices);
+    auto hasType = [&devices](QInputDevice::DeviceType type) {
+        return std::any_of(devices.constBegin(), devices.constEnd(),
+                           [type](const QInputDevice *device) { return device->type() == type; });
     };
 
-    m_hasKeyboard = QInputDevice::primaryKeyboard() ? true :  false;
-    m_hasMouse =  hasType(QInputDevice::DeviceType::Mouse);
-    m_hasTouchscreen =  hasType(QInputDevice::DeviceType::TouchScreen);
-    m_hasTouchpad =  hasType(QInputDevice::DeviceType::TouchPad);
-
-    qDebug() << "CHECXKING IF DEVICE HAS TYPE" << m_hasKeyboard;
-
+    m_hasKeyboard = QInputDevice::primaryKeyboard() != nullptr;
+    m_hasMouse = hasType(QInputDevice::DeviceType::Mouse);
+    m_hasTouchscreen = hasType(QInputDevice::DeviceType::TouchScreen);
+    m_hasTouchpad = hasType(QInputDevice::DeviceType::TouchPad);
 
     Q_EMIT hasKeyboardChanged(m_hasKeyboard);
     Q_EMIT hasMouseChanged(m_hasMouse);
@@ -269,10 +291,6 @@ void FormFactorInfo::checkInputs(const QList<const QInputDevice *> &devices)
 
 FormFactorInfo::FormFactorInfo(QObject *parent) : QObject(parent)
 {
-    qDebug( "INIT FORMFACTOR INFO");
-
     checkInputs(QInputDevice::devices());
-qDebug() << "HAS KEYBOARD?" << QInputDevice::primaryKeyboard();
     findBestMode();
-
 }

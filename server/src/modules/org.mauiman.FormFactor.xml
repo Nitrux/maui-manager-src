@@ -10,6 +10,7 @@
 <arg name="forceTouchScreen" type="b" direction="in"/>
 </method>
 
+<property name="version" type="u" access="read"/>
 <property name="hasKeyboard" type="b" access="read"/>
 <property name="hasTouchscreen" type="b" access="read"/>
 <property name="hasMouse" type="b" access="read"/>

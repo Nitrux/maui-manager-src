@@ -1,24 +1,21 @@
 #include "accessibilitymanager.h"
-#include "settingsstore.h"
+#include "accessibility_interface.h"
 #include "mauimanutils.h"
 
 #include <QDebug>
-#include <QDBusInterface>
+#include <QDBusMessage>
 
 using namespace MauiMan;
 
 AccessibilityManager::AccessibilityManager(QObject *parent) : QObject(parent)
-  ,m_settings(new MauiMan::SettingsStore(this))
 {
-    qDebug( " INIT ACCESSIBILITY MANAGER");
-
-    auto server = new MauiManUtils(this);
+    auto server = MauiManUtils::instance();
     if(server->serverRunning())
     {
         this->setConnections();
     }
 
-    connect(server, &MauiManUtils::serverRunningChanged, [this](bool state)
+    connect(server, &MauiManUtils::serverRunningChanged, this, [this](bool state)
     {
         if(state)
         {
@@ -31,46 +28,66 @@ AccessibilityManager::AccessibilityManager(QObject *parent) : QObject(parent)
 
 bool AccessibilityManager::singleClick() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("singleClick");
+        if (value.isValid())
+        {
+            return value.toBool();
+        }
+    }
+
     return m_singleClick;
 }
 
 void AccessibilityManager::setSingleClick(bool singleClick)
 {
-    if (m_singleClick == singleClick)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "AccessibilityManager::setSingleClick ignored because Accessibility facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->singleClick() == singleClick)
         return;
 
-    m_singleClick = singleClick;
-
-    sync(QStringLiteral("setSingleClick"), m_singleClick);
-    m_settings->save(QStringLiteral("SingleClick"), m_singleClick);
-
-    Q_EMIT singleClickChanged(m_singleClick);
+    sync(QStringLiteral("setSingleClick"), singleClick);
+    loadSettings();
 }
 
 void AccessibilityManager::onSingleClickChanged(bool singleClick)
 {
-    if (m_singleClick == singleClick)
+    Q_UNUSED(singleClick);
+    const bool previousSingleClick = m_singleClick;
+
+    loadSettings();
+    if (m_singleClick == previousSingleClick)
         return;
 
-    m_singleClick = singleClick;
     Q_EMIT singleClickChanged(m_singleClick);
 }
 
 void AccessibilityManager::onScrollBarPolicyChanged(uint scrollBarPolicy)
 {
-    if (m_scrollBarPolicy == scrollBarPolicy)
+    Q_UNUSED(scrollBarPolicy);
+    const uint previousScrollBarPolicy = m_scrollBarPolicy;
+
+    loadSettings();
+    if (m_scrollBarPolicy == previousScrollBarPolicy)
         return;
 
-    m_scrollBarPolicy = scrollBarPolicy;
     Q_EMIT scrollBarPolicyChanged(m_scrollBarPolicy);
 }
 
 void AccessibilityManager::onPlaySoundsChanged(bool playSounds)
 {
-    if (m_playSounds == playSounds)
+    Q_UNUSED(playSounds);
+    const bool previousPlaySounds = m_playSounds;
+
+    loadSettings();
+    if (m_playSounds == previousPlaySounds)
         return;
 
-    m_playSounds = playSounds;
     Q_EMIT playSoundsChanged(m_playSounds);
 }
 
@@ -78,8 +95,15 @@ void AccessibilityManager::sync(const QString &key, const QVariant &value)
 {
     if (m_interface && m_interface->isValid())
     {
-        m_interface->call(key, value);
+        const QDBusMessage reply = m_interface->call(key, value);
+        if (reply.type() == QDBusMessage::ErrorMessage)
+        {
+            qWarning() << "AccessibilityManager::sync failed for call" << key << ":" << reply.errorMessage();
+        }
+        return;
     }
+
+    qWarning() << "AccessibilityManager::sync skipped (no valid org.mauiman.Accessibility interface) for call:" << key;
 }
 
 void AccessibilityManager::setConnections()
@@ -91,68 +115,98 @@ void AccessibilityManager::setConnections()
         m_interface = nullptr;
     }
 
-    m_interface = new QDBusInterface(QStringLiteral("org.mauiman.Manager"),
-                                     QStringLiteral("/Accessibility"),
-                                     QStringLiteral("org.mauiman.Accessibility"),
-                                     QDBusConnection::sessionBus(), this);
+    m_interface = new OrgMauimanAccessibilityInterface(QStringLiteral("org.mauiman.Manager"),
+                                                       QStringLiteral("/Accessibility"),
+                                                       QDBusConnection::sessionBus(),
+                                                       this);
 
     if (m_interface->isValid())
     {
-        connect(m_interface, SIGNAL(singleClickChanged(bool)), this, SLOT(onSingleClickChanged(bool)));
-        connect(m_interface, SIGNAL(playSoundsChanged(bool)), this, SLOT(onPlaySoundsChanged(bool)));
-        connect(m_interface, SIGNAL(scrollBarPolicyChanged(uint)), this, SLOT(onScrollBarPolicyChanged(uint)));
+        connect(m_interface, &OrgMauimanAccessibilityInterface::singleClickChanged, this, &AccessibilityManager::onSingleClickChanged);
+        connect(m_interface, &OrgMauimanAccessibilityInterface::playSoundsChanged, this, &AccessibilityManager::onPlaySoundsChanged);
+        connect(m_interface, &OrgMauimanAccessibilityInterface::scrollBarPolicyChanged, this, &AccessibilityManager::onScrollBarPolicyChanged);
+        loadSettings();
     }
 }
 
 void AccessibilityManager::loadSettings()
 {
-    m_settings->beginModule(QStringLiteral("Accessibility"));
-
     if(m_interface && m_interface->isValid())
     {
-        m_singleClick = m_interface->property("singleClick").toBool();
-        m_scrollBarPolicy = m_interface->property("scrollBarPolicy").toUInt();
-        m_playSounds = m_interface->property("playSounds").toBool();
-        return;
-    }
+        const QVariant singleClick = m_interface->property("singleClick");
+        if (singleClick.isValid())
+        {
+            m_singleClick = singleClick.toBool();
+        }
 
-    m_singleClick = m_settings->load(QStringLiteral("SingleClick"), m_singleClick).toBool();
-    m_scrollBarPolicy = m_settings->load(QStringLiteral("ScrollBarPolicy"), m_scrollBarPolicy).toUInt();
-    m_playSounds = m_settings->load(QStringLiteral("PlaySounds"), m_playSounds).toBool();
+        const QVariant scrollBarPolicy = m_interface->property("scrollBarPolicy");
+        if (scrollBarPolicy.isValid())
+        {
+            m_scrollBarPolicy = scrollBarPolicy.toUInt();
+        }
+
+        const QVariant playSounds = m_interface->property("playSounds");
+        if (playSounds.isValid())
+        {
+            m_playSounds = playSounds.toBool();
+        }
+    }
 }
 
 uint AccessibilityManager::scrollBarPolicy() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("scrollBarPolicy");
+        if (value.isValid())
+        {
+            return value.toUInt();
+        }
+    }
+
     return m_scrollBarPolicy;
 }
 
 void AccessibilityManager::setScrollBarPolicy(uint newScrollBarPolicy)
 {
-    if (m_scrollBarPolicy == newScrollBarPolicy)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "AccessibilityManager::setScrollBarPolicy ignored because Accessibility facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->scrollBarPolicy() == newScrollBarPolicy)
         return;
 
-    m_scrollBarPolicy = newScrollBarPolicy;
-
-    sync(QStringLiteral("setScrollBarPolicy"), m_scrollBarPolicy);
-    m_settings->save(QStringLiteral("ScrollBarPolicy"), m_scrollBarPolicy);
-
-    Q_EMIT scrollBarPolicyChanged(m_scrollBarPolicy);
+    sync(QStringLiteral("setScrollBarPolicy"), newScrollBarPolicy);
+    loadSettings();
 }
 
 bool AccessibilityManager::playSounds() const
 {
+    if (m_interface && m_interface->isValid())
+    {
+        const QVariant value = m_interface->property("playSounds");
+        if (value.isValid())
+        {
+            return value.toBool();
+        }
+    }
+
     return m_playSounds;
 }
 
 void AccessibilityManager::setPlaySounds(bool newPlaySounds)
 {
-    if (m_playSounds == newPlaySounds)
+    if (!m_interface || !m_interface->isValid())
+    {
+        qWarning() << "AccessibilityManager::setPlaySounds ignored because Accessibility facade is read-only without an active MauiMan D-Bus interface.";
+        return;
+    }
+
+    if (this->playSounds() == newPlaySounds)
         return;
 
-    m_playSounds = newPlaySounds;
-
-    sync(QStringLiteral("setPlaySounds"), m_playSounds);
-    m_settings->save(QStringLiteral("PlaySounds"), m_playSounds);
-
-    Q_EMIT playSoundsChanged(m_playSounds);
+    sync(QStringLiteral("setPlaySounds"), newPlaySounds);
+    loadSettings();
 }

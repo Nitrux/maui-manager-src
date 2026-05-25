@@ -1,97 +1,20 @@
 #include "background.h"
 #include "backgroundadaptor.h"
+
 #include <QDBusConnection>
+#include <QLoggingCategory>
 
-#include "settingsstore.h"
+Q_LOGGING_CATEGORY(LOG_BACKGROUND_SERVER, "mauiman.server.background")
 
-#include <QDebug>
-
-Background::Background(QObject *parent) : QObject(parent)
+Background::Background(QObject *parent)
+    : BackgroundBase(parent)
 {
-    qDebug( " INIT BACKGORUND MODULE");
+    qCInfo(LOG_BACKGROUND_SERVER, "INIT BACKGROUND MODULE");
     new BackgroundAdaptor(this);
-    if(!QDBusConnection::sessionBus().registerObject(QStringLiteral("/Background"), this))
+    if (!QDBusConnection::sessionBus().registerObject(QStringLiteral("/Background"), this))
     {
-        qDebug() << "FAILED TO REGISTER BACKGROUND DBUS OBJECT";
+        qCWarning(LOG_BACKGROUND_SERVER) << "FAILED TO REGISTER BACKGROUND DBUS OBJECT";
         return;
     }
-    MauiMan::SettingsStore settings;
-    settings.beginModule(QStringLiteral("Background"));
-    m_wallpaperSource = settings.load(QStringLiteral("Wallpaper"), m_wallpaperSource).toString();
-    m_dimWallpaper = settings.load(QStringLiteral("DimWallpaper"), m_dimWallpaper).toBool();
-    m_fitWallpaper = settings.load(QStringLiteral("FitWallpaper"), m_fitWallpaper).toBool();
-    m_showWallpaper = settings.load(QStringLiteral("ShowWallpaper"), m_showWallpaper).toBool();
-    m_solidColor = settings.load(QStringLiteral("SolidColor"), m_solidColor).toString();
-    settings.endModule();
+    loadAllPrefs();
 }
-
-QString Background::wallpaperSource() const
-{
-    return m_wallpaperSource;
-}
-
-bool Background::dimWallpaper() const
-{
-    return m_dimWallpaper;
-}
-
-bool Background::fitWallpaper() const
-{
-    return m_fitWallpaper;
-}
-
-QString Background::solidColor() const
-{
-    return m_solidColor;
-}
-
-bool Background::showWallpaper() const
-{
-    return m_showWallpaper;
-}
-
-void Background::setWallpaperSource(const QString &wallpaperSource)
-{
-    if (m_wallpaperSource == wallpaperSource)
-        return;
-
-    m_wallpaperSource = wallpaperSource;
-    Q_EMIT wallpaperSourceChanged(m_wallpaperSource);
-}
-
-void Background::setDimWallpaper(bool dimWallpaper)
-{
-    if (m_dimWallpaper == dimWallpaper)
-        return;
-
-    m_dimWallpaper = dimWallpaper;
-    Q_EMIT dimWallpaperChanged(m_dimWallpaper);
-}
-
-void Background::setFitWallpaper(bool fitWallpaper)
-{
-    if (m_fitWallpaper == fitWallpaper)
-        return;
-
-    m_fitWallpaper = fitWallpaper;
-    Q_EMIT fitWallpaperChanged(m_fitWallpaper);
-}
-
-void Background::setSolidColor(const QString &solidColor)
-{
-    if (m_solidColor == solidColor)
-        return;
-
-    m_solidColor = solidColor;
-    Q_EMIT solidColorChanged(m_solidColor);
-}
-
-void Background::setShowWallpaper(bool showWallpaper)
-{
-    if (m_showWallpaper == showWallpaper)
-        return;
-
-    m_showWallpaper = showWallpaper;
-    Q_EMIT showWallpaperChanged(m_showWallpaper);
-}
-

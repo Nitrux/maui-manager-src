@@ -5,13 +5,14 @@
 
 #include "mauiman_export.h"
 
-class QDBusInterface;
+class OrgMauimanScreenInterface;
 namespace MauiMan
 {
-class SettingsStore;
-
 /**
- * The ScreenManager class exposes all the system screen properties.
+ * The ScreenManager class exposes runtime screen properties through MauiMan's
+ * D-Bus interface. Values are treated as facade state and are not persisted by
+ * MauiMan. Writes are best-effort and may be ignored when no writable upstream
+ * source is available.
  */
 class MAUIMAN_EXPORT ScreenManager : public QObject
 {
@@ -57,8 +58,7 @@ Q_SIGNALS:
     void orientationChanged(uint orientation);
 
 private:
-    QDBusInterface *m_interface = nullptr;
-    MauiMan::SettingsStore *m_settings;
+    OrgMauimanScreenInterface *m_interface = nullptr;
 
     void sync(const QString &key, const QVariant &value);
     void setConnections();

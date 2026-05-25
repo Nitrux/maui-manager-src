@@ -1,9 +1,10 @@
 #pragma once
 
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <QObject>
+#include <QVector>
 
-class Server : public QCoreApplication
+class Server : public QGuiApplication
 {
     Q_OBJECT
 public:
@@ -14,4 +15,3 @@ public:
 private:
     QVector<QObject*> m_modules;
 };
-
