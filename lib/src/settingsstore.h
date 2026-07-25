@@ -5,6 +5,8 @@
 #include "mauiman_export.h"
 
 class QSettings;
+class QFileSystemWatcher;
+class QTimer;
 
 namespace MauiMan
 {
@@ -50,7 +52,20 @@ public:
      */
     void endModule();
 
+Q_SIGNALS:
+    /**
+     * Emitted after a settings-file change has been resynchronized.
+     */
+    void settingsChanged();
+
 private:
+    void refreshWatchPaths();
+    void scheduleReload();
+
     QSettings *m_settings;
+    QFileSystemWatcher *m_watcher;
+    QTimer *m_reloadTimer;
+    QString m_configPath;
+    QString m_configDirectory;
 };
 }

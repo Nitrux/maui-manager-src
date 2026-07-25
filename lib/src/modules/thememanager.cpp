@@ -126,6 +126,7 @@ void ThemeManager::setConnections()
         connect(m_interface, &OrgMauimanThemeInterface::smallFontChanged, this, &ThemeManager::onSmallFontChanged);
         connect(m_interface, &OrgMauimanThemeInterface::monospacedFontChanged, this, &ThemeManager::onMonospacedFontChanged);
         connect(m_interface, &OrgMauimanThemeInterface::customColorSchemeChanged, this, &ThemeManager::onCustomColorSchemeChanged);
+        connect(m_interface, &OrgMauimanThemeInterface::allowCustomStylingChanged, this, &ThemeManager::onAllowCustomStylingChanged);
     }
 }
 
@@ -315,6 +316,15 @@ void ThemeManager::onEnableCSDChanged(const bool &enableCSD)
 
     m_enableCSD = enableCSD;
     Q_EMIT enableCSDChanged(m_enableCSD);
+}
+
+void ThemeManager::onAllowCustomStylingChanged(bool allowCustomStyling)
+{
+    if (m_allowCustomStyling == allowCustomStyling)
+        return;
+
+    m_allowCustomStyling = allowCustomStyling;
+    Q_EMIT allowCustomStylingChanged(m_allowCustomStyling);
 }
 
 void ThemeManager::onBorderRadiusChanged(const uint &radius)

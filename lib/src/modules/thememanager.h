@@ -278,6 +278,7 @@ namespace MauiMan
         void onSmallFontChanged(const QString &font);
         void onMonospacedFontChanged(const QString &font);
         void onCustomColorSchemeChanged(const QString &scheme);
+        void onAllowCustomStylingChanged(bool allowCustomStyling);
 
     Q_SIGNALS:
         void styleTypeChanged(int styleType);

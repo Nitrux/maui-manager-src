@@ -8,8 +8,8 @@ declaring a ``<Module>Base`` QObject base class that contains:
   - inline getter/setter/signal definitions following the standard pattern
     ``if (m_x == v) return; m_x = v; savePref(...); Q_EMIT xChanged(m_x);``
   - member fields initialised from ``<Module>Manager::DefaultValues::<name>``
-  - ``savePref()`` and ``loadAllPrefs()`` helpers that hit ``SettingsStore``
-    via the standard begin/save/end pattern.
+  - ``savePref()``, ``loadAllPrefs()``, and ``reloadAllPrefs()`` helpers that
+    hit ``SettingsStore`` via the standard begin/save/end pattern.
 
 The concrete server-side class then subclasses ``<Module>Base`` and only has
 to own its constructor (DBus adaptor registration + ``loadAllPrefs()``) and
@@ -36,9 +36,7 @@ TYPE_MAP = {
 # of the property name" (e.g. accentColor -> AccentColor). Add an entry here
 # when the historical config key on disk diverges from that rule, so existing
 # user configs keep working without migration.
-SETTINGS_KEY_OVERRIDES = {
-    ("Background", "wallpaperSource"): "Wallpaper",
-}
+SETTINGS_KEY_OVERRIDES = {}
 
 # Default-value naming exceptions. The default rule is
 # ``<Module>Manager::DefaultValues::<propertyName>``. Add an entry when the
@@ -124,6 +122,10 @@ def emit(module, xml_path, out_path):
     L.append("        : QObject(parent)")
     L.append("        , m_settings(new MauiMan::SettingsStore(this))")
     L.append("    {")
+    L.append(
+        f"        connect(m_settings, &MauiMan::SettingsStore::settingsChanged, "
+        f"this, &{module}Base::reloadAllPrefs);"
+    )
     L.append("    }")
     L.append("")
     for name, _, qt_type, setter_arg, _ in properties:
@@ -151,6 +153,26 @@ def emit(module, xml_path, out_path):
         key = settings_key(module, name)
         L.append(f'        m_{name} = m_settings->load(QStringLiteral("{key}"), m_{name}).{qvariant_accessor}();')
     L.append("        m_settings->endModule();")
+    L.append("    }")
+    L.append("")
+    L.append("    void reloadAllPrefs()")
+    L.append("    {")
+    L.append(f'        m_settings->beginModule(QStringLiteral("{module}"));')
+    for name, _, qt_type, _, qvariant_accessor in properties:
+        key = settings_key(module, name)
+        default_value = default_value_ref(module, name)
+        L.append(
+            f'        const {qt_type} new_{name} = m_settings->load('
+            f'QStringLiteral("{key}"), {default_value}).{qvariant_accessor}();'
+        )
+    L.append("        m_settings->endModule();")
+    L.append("")
+    for name, _, _, _, _ in properties:
+        L.append(f"        if (m_{name} != new_{name})")
+        L.append("        {")
+        L.append(f"            m_{name} = new_{name};")
+        L.append(f"            Q_EMIT {name}Changed(m_{name});")
+        L.append("        }")
     L.append("    }")
     L.append("")
     L.append("    void savePref(const QString &key, const QVariant &value)")

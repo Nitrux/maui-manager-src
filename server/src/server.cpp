@@ -2,11 +2,8 @@
 #include <QDBusConnectionInterface>
 #include <QLoggingCategory>
 
-#include "modules/background.h"
 #include "modules/theme.h"
-#include "modules/screen.h"
 #include "modules/formfactor.h"
-#include "modules/accessibility.h"
 #include "modules/inputdevices.h"
 
 #include <signal.h>
@@ -56,14 +53,11 @@ bool Server::init()
     signal(SIGTERM, handleShutdownSignal);
     signal(SIGINT, handleShutdownSignal);
 
-    // Persisted preference modules (read/write + settings-backed).
-    m_modules << new Background();
+    // MauiKit preference modules (read/write + settings-backed).
     m_modules << new Theme();
     m_modules << new FormFactor();
 
-    // Runtime facade modules (state mirrors platform/session signals).
-    m_modules << new Screen();
-    m_modules << new Accessibility();
+    // Runtime input state used for MauiKit form-factor decisions.
     m_modules << new InputDevices();
     return true;
 }

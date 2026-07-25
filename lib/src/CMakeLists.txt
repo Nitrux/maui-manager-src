@@ -9,38 +9,23 @@ qt_add_dbus_interface(mauiman_dbus_client_SRCS
     ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.FormFactor.xml
     formfactor_interface)
 qt_add_dbus_interface(mauiman_dbus_client_SRCS
-    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Background.xml
-    background_interface)
-qt_add_dbus_interface(mauiman_dbus_client_SRCS
     ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Theme.xml
     theme_interface)
 qt_add_dbus_interface(mauiman_dbus_client_SRCS
-    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Screen.xml
-    screen_interface)
-qt_add_dbus_interface(mauiman_dbus_client_SRCS
     ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.InputDevices.xml
     inputdevices_interface)
-qt_add_dbus_interface(mauiman_dbus_client_SRCS
-    ${CMAKE_SOURCE_DIR}/server/src/modules/org.mauiman.Accessibility.xml
-    accessibility_interface)
 
 set(mauiman_HDRS
     settingsstore.h
-    modules/backgroundmanager.h
     modules/thememanager.h
-    modules/screenmanager.h
     modules/formfactormanager.h
-    modules/accessibilitymanager.h
     modules/inputdevicesmanager.h
     mauimanutils.h)
 
 set(mauiman_SRCS
     settingsstore.cpp
-    modules/backgroundmanager.cpp
     modules/thememanager.cpp
-    modules/screenmanager.cpp
     modules/formfactormanager.cpp
-    modules/accessibilitymanager.cpp
     modules/inputdevicesmanager.cpp
     mauimanutils.cpp
     ${mauiman_dbus_client_SRCS})
