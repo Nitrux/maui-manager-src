@@ -66,6 +66,10 @@
     <arg name="allow" type="b" direction="in"/>
 </method>
 
+<method name="setScrollBarOnLeft">
+    <arg name="enabled" type="b" direction="in"/>
+</method>
+
 <property name="version" type="u" access="read"/>
 <property name="accentColor" type="s" access="read"/>
 <property name="styleType" type="i" access="read"/>
@@ -83,6 +87,7 @@
 <property name="monospacedFont" type="s" access="read"/>
 <property name="customColorScheme" type="s" access="read"/>
 <property name="allowCustomStyling" type="b" access="read"/>
+<property name="scrollBarOnLeft" type="b" access="read"/>
 
 <signal name="accentColorChanged">
 <arg type="s"/>
@@ -130,6 +135,9 @@
 <arg type="s"/>
 </signal>
 <signal name="allowCustomStylingChanged">
+    <arg type="b"/>
+</signal>
+<signal name="scrollBarOnLeftChanged">
     <arg type="b"/>
 </signal>
 </interface>

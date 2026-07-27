@@ -123,9 +123,15 @@ namespace MauiMan
          */
         Q_PROPERTY(bool allowCustomStyling READ allowCustomStyling WRITE setAllowCustomStyling NOTIFY allowCustomStylingChanged)
 
+        /**
+         * Whether vertical scroll bars should be positioned on the left side.
+         * By default this is set to `false`.
+         */
+        Q_PROPERTY(bool scrollBarOnLeft READ scrollBarOnLeft WRITE setScrollBarOnLeft NOTIFY scrollBarOnLeftChanged)
+
     public:
 
-        uint version() const { return 1u; }
+        uint version() const { return 2u; }
 
         /**
          * @brief The Theme module default values
@@ -198,6 +204,7 @@ namespace MauiMan
             static inline const QString monospacedFont = getMonospacedFont();
             static inline const QString customColorScheme = QStringLiteral("Nitrux");
             static inline const bool allowCustomStyling = false;
+            static inline const bool scrollBarOnLeft = false;
         };
 
         explicit ThemeManager(QObject * parent = nullptr);
@@ -261,6 +268,9 @@ namespace MauiMan
         bool allowCustomStyling() const;
         void setAllowCustomStyling(bool value);
 
+        bool scrollBarOnLeft() const;
+        void setScrollBarOnLeft(bool value);
+
     private Q_SLOTS:
         void onStyleTypeChanged(const int &newStyleType);
         void onAccentColorChanged(const QString &newAccentColor);
@@ -279,6 +289,7 @@ namespace MauiMan
         void onMonospacedFontChanged(const QString &font);
         void onCustomColorSchemeChanged(const QString &scheme);
         void onAllowCustomStylingChanged(bool allowCustomStyling);
+        void onScrollBarOnLeftChanged(bool scrollBarOnLeft);
 
     Q_SIGNALS:
         void styleTypeChanged(int styleType);
@@ -297,6 +308,7 @@ namespace MauiMan
         void monospacedFontChanged(QString monospacedFont);
         void customColorSchemeChanged(QString customColorScheme);
         void allowCustomStylingChanged(bool customStyling);
+        void scrollBarOnLeftChanged(bool scrollBarOnLeft);
 
     private:
         OrgMauimanThemeInterface *m_interface = nullptr;
@@ -319,6 +331,7 @@ namespace MauiMan
         QString m_monospacedFont = MauiMan::ThemeManager::DefaultValues::monospacedFont;
         QString m_customColorScheme = MauiMan::ThemeManager::DefaultValues::customColorScheme;
         bool m_allowCustomStyling = MauiMan::ThemeManager::DefaultValues::allowCustomStyling;
+        bool m_scrollBarOnLeft = MauiMan::ThemeManager::DefaultValues::scrollBarOnLeft;
 
         bool sync(const QString &key, const QVariant &value);
         void setConnections();

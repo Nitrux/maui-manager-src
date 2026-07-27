@@ -87,6 +87,9 @@ bool ThemeManager::sync(const QString &key, const QVariant &value)
         } else if (key == QStringLiteral("setAllowCustomStyling"))
         {
             return finishCall(m_interface->setAllowCustomStyling(value.toBool()));
+        } else if (key == QStringLiteral("setScrollBarOnLeft"))
+        {
+            return finishCall(m_interface->setScrollBarOnLeft(value.toBool()));
         }
 
         qWarning() << "ThemeManager::sync received unknown method key:" << key;
@@ -127,6 +130,7 @@ void ThemeManager::setConnections()
         connect(m_interface, &OrgMauimanThemeInterface::monospacedFontChanged, this, &ThemeManager::onMonospacedFontChanged);
         connect(m_interface, &OrgMauimanThemeInterface::customColorSchemeChanged, this, &ThemeManager::onCustomColorSchemeChanged);
         connect(m_interface, &OrgMauimanThemeInterface::allowCustomStylingChanged, this, &ThemeManager::onAllowCustomStylingChanged);
+        connect(m_interface, &OrgMauimanThemeInterface::scrollBarOnLeftChanged, this, &ThemeManager::onScrollBarOnLeftChanged);
     }
 }
 
@@ -152,6 +156,7 @@ void ThemeManager::loadSettings()
         m_smallFont = m_interface->property("smallFont").toString();
         m_monospacedFont = m_interface->property("monospacedFont").toString();
         m_customColorScheme = m_interface->property("customColorScheme").toString();
+        m_scrollBarOnLeft = m_interface->property("scrollBarOnLeft").toBool();
 
         m_settings->endModule();
         return;
@@ -173,6 +178,7 @@ void ThemeManager::loadSettings()
     m_smallFont = m_settings->load(QStringLiteral("SmallFont"), m_smallFont).toString();
     m_monospacedFont = m_settings->load(QStringLiteral("MonospacedFont"), m_monospacedFont).toString();
     m_customColorScheme = m_settings->load(QStringLiteral("CustomColorScheme"), m_customColorScheme).toString();
+    m_scrollBarOnLeft = m_settings->load(QStringLiteral("ScrollBarOnLeft"), m_scrollBarOnLeft).toBool();
     m_settings->endModule();
 }
 
@@ -325,6 +331,15 @@ void ThemeManager::onAllowCustomStylingChanged(bool allowCustomStyling)
 
     m_allowCustomStyling = allowCustomStyling;
     Q_EMIT allowCustomStylingChanged(m_allowCustomStyling);
+}
+
+void ThemeManager::onScrollBarOnLeftChanged(bool scrollBarOnLeft)
+{
+    if (m_scrollBarOnLeft == scrollBarOnLeft)
+        return;
+
+    m_scrollBarOnLeft = scrollBarOnLeft;
+    Q_EMIT scrollBarOnLeftChanged(m_scrollBarOnLeft);
 }
 
 void ThemeManager::onBorderRadiusChanged(const uint &radius)
@@ -649,6 +664,26 @@ void ThemeManager::setAllowCustomStyling(bool value)
         m_settings->save(QStringLiteral("AllowCustomStyling"), m_allowCustomStyling);
     }
     Q_EMIT allowCustomStylingChanged(m_allowCustomStyling);
+}
+
+bool ThemeManager::scrollBarOnLeft() const
+{
+    return m_scrollBarOnLeft;
+}
+
+void ThemeManager::setScrollBarOnLeft(bool value)
+{
+    if (m_scrollBarOnLeft == value)
+        return;
+
+    m_scrollBarOnLeft = value;
+    if (!sync(QStringLiteral("setScrollBarOnLeft"), m_scrollBarOnLeft))
+    {
+        m_settings->beginModule(QStringLiteral("Theme"));
+        m_settings->save(QStringLiteral("ScrollBarOnLeft"), m_scrollBarOnLeft);
+        m_settings->endModule();
+    }
+    Q_EMIT scrollBarOnLeftChanged(m_scrollBarOnLeft);
 }
 
 void MauiMan::ThemeManager::resetIconSize()
