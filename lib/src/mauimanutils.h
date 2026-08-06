@@ -31,30 +31,6 @@ public:
      */
     static void invokeManager(const QString &module);
 
-    /**
-     * @brief The name of the current desktop environment. Possible values are KDE, GNOME, or CASK
-     * @return the name of the desktop environment as parsed form the env var `XDG_CURRENT_DESKTOP`
-     */
-    static QString currentDesktopSession();
-
-    /**
-     * @brief Whether the current desktop environment session is running Maui Shell
-     * @return
-     */
-    static bool isMauiSession();
-
-    /**
-     * @brief Whether the current desktop environment session is Plasma from KDE
-     * @return
-     */
-    static bool isPlasmaSession();
-
-    /**
-     * @brief Whether the current desktop environment is GNOME Shell
-     * @return
-     */
-    static bool isGnomeSession();
-
 Q_SIGNALS:
     void serverRunningChanged(bool state);
 

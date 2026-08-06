@@ -56,29 +56,3 @@ void MauiManUtils::invokeManager(const QString &module)
 {
     QProcess::startDetached(QStringLiteral("MauiSettings"), QStringList {QStringLiteral("-m"), module});
 }
-
-QString MauiManUtils::currentDesktopSession()
-{
-    if(qEnvironmentVariableIsSet("XDG_CURRENT_DESKTOP"))
-    {
-        const auto names = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(QStringLiteral(";"));
-        return names.first();
-    }
-
-    return QString();
-}
-
-bool MauiManUtils::isMauiSession()
-{
-    return currentDesktopSession().compare(QStringLiteral("CASK"), Qt::CaseInsensitive) == 0;
-}
-
-bool MauiManUtils::isPlasmaSession()
-{
-    return currentDesktopSession().compare(QStringLiteral("KDE"), Qt::CaseInsensitive) == 0;
-}
-
-bool MauiManUtils::isGnomeSession()
-{
-    return currentDesktopSession().compare(QStringLiteral("GNOME"), Qt::CaseInsensitive) == 0;
-}

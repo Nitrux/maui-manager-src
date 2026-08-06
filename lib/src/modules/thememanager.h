@@ -6,7 +6,6 @@
 #include <QFont>
 
 #include "mauiman_export.h"
-#include "mauimanutils.h"
 
 class OrgMauimanThemeInterface;
 
@@ -53,7 +52,7 @@ namespace MauiMan
         Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged RESET resetAccentColor)
 
         /**
-         * The preferred icon theme. This preference is only valid when using the Maui Shell session.
+         * The preferred icon theme.
          */
         Q_PROPERTY(QString iconTheme READ iconTheme WRITE setIconTheme NOTIFY iconThemeChanged)
 
@@ -143,11 +142,7 @@ namespace MauiMan
              */
             static int preferredStyleType()
             {
-                if(!MauiManUtils::isMauiSession())
-                {
-                    return 3; //if it is plasma or other session use the system color scheme by setting the style to 3=auto
-                }
-                return 0;
+                return 3; // use the system color scheme by default
             }
 
             /**

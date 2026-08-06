@@ -34,7 +34,6 @@ InputDevices::InputDevices(QObject *parent) : QObject(parent)
     // Candidates:
     // 1) KWin/plasma keyboard D-Bus integration (implemented below).
     // 2) wlroots/sway IPC keymap observers.
-    // 3) Session-specific seat/keymap provider used by Maui Shell.
     //
     // Expected behavior:
     // - Emit keyboard*Changed signals on runtime keymap changes without restart.
