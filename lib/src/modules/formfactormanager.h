@@ -13,8 +13,7 @@ namespace MauiMan
     class SettingsStore;
 
     /**
-     * @brief The FormFactorInfo class exposes runtime capabilities used to
-     * determine the best UI mode for the current device.
+     * @brief Detects runtime capabilities and recommends a UI mode for the current device.
      *
      * This class is read-only and continuously reflects current hardware and
      * screen characteristics such as keyboard, mouse, touch support, screen
@@ -29,7 +28,7 @@ namespace MauiMan
         Q_PROPERTY(uint bestMode READ bestMode NOTIFY bestModeChanged FINAL)
         
         /**
-         * The system preferred mode. This is picked up from the env var `QT_QUICK_CONTROLS_MOBILE`
+         * The default mode selected from the QT_QUICK_CONTROLS_MOBILE environment variable.
          */
         Q_PROPERTY(uint defaultMode READ defaultMode CONSTANT FINAL)
 
@@ -65,22 +64,22 @@ namespace MauiMan
 
     public:
         /**
-         * @brief The possible form factor modes the system can have based on the device capabilities.
+         * @brief UI modes selected from the device display and input capabilities.
          */
         enum Mode
         {
             /**
-             * Is a desktop when the screen size if relative big, has a physical keyboard, mouse.
+             * Desktop mode for larger screens or devices with pointer and keyboard input.
              */
             Desktop = 0,
             
             /**
-             * Is a tablet when the devices has a relative big screen size, and it is a touch screen. There is not mouse present.
+             * Tablet mode for touch-oriented medium or large displays.
              */
             Tablet,
             
             /**
-             * Is a mobile phone, the the screen size is small, has a touch screen and not peripheral input devices such as a a keyboard or mouse.
+             * Phone mode for small touch-oriented displays without peripheral input.
              */
             Phone
         };
@@ -149,8 +148,7 @@ namespace MauiMan
     };
 
     /**
-     * @brief The FormFactorManager class exposes persisted user preferences
-     * related to form-factor behavior.
+     * @brief Synchronizes persisted user preferences related to form-factor behavior.
      *
      * It extends FormFactorInfo runtime data with preferences such as
      * `preferredMode` and `forceTouchScreen`.
@@ -165,15 +163,12 @@ namespace MauiMan
         Q_PROPERTY(uint version READ version CONSTANT)
 
         /**
-         * The preferred mode to display information. The possible values are:
-         * - 0 Desktop
-         * - 1 Tablet
-         * - 2 Phone
+         * The user-preferred UI mode, using a FormFactorInfo::Mode value.
          */
         Q_PROPERTY(uint preferredMode READ preferredMode WRITE setPreferredMode NOTIFY preferredModeChanged FINAL)
 
         /**
-         * If a device is not detected to have a touch screen , and still it has it, this property can be used to force allow the touch screen interactions.
+         * Whether applications should enable touch interactions even when no touchscreen is detected.
          */
         Q_PROPERTY(bool forceTouchScreen READ forceTouchScreen WRITE setForceTouchScreen NOTIFY forceTouchScreenChanged)
 

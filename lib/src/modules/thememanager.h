@@ -9,22 +9,19 @@
 
 class OrgMauimanThemeInterface;
 
-/**
- * @brief The MauiMan name-space contains all of the available modules for configuring the Maui Applications and Shell properties.
- * The properties are exposed for the user, developer and distributor to tweak.
- */
+/** Contains client-side managers for shared Maui application and shell preferences. */
 namespace MauiMan
 {
 
     class SettingsStore;
 
     /**
-     * @brief The ThemeManager class
-     * Helpful for third parties to connect to property changes from the Theme module setting changes.
+     * @brief Provides synchronized access to shared Maui theme preferences.
      *
-     * @note Note that the properties can be reset back to their default values by using the `undefined` value from QML, or using the reset methods accordingly.
-     *
-     * The preferences have a set of default values, however the values used will be the ones present in the conf file. When a property is reset, then the default value will be written to the conf file.
+     * Values are synchronized with the Theme object on org.mauiman.Manager.
+     * Local settings provide defaults and an offline fallback. Properties with
+     * reset functions can be restored to their compiled defaults; from QML,
+     * assigning undefined invokes the corresponding reset function.
      */
     class MAUIMAN_EXPORT ThemeManager : public QObject
     {
@@ -118,7 +115,7 @@ namespace MauiMan
         Q_PROPERTY(QString customColorScheme READ customColorScheme WRITE setCustomColorScheme NOTIFY customColorSchemeChanged)
 
         /**
-         * Allow third party styles for QtQiUickControls. By default this is set to `false`. MauiKit-Style is the best fitted style to be used with Maui Apps, if you want to use a custom style, this needs to be dedicated, since existing styles won't look good with the MauiKit custom controls.
+         * Allow third-party styles for Qt Quick Controls. By default this is set to `false`. MauiKit-Style is the best fitted style to be used with Maui Apps, if you want to use a custom style, this must be enabled deliberately, since existing styles won't look good with the MauiKit custom controls.
          */
         Q_PROPERTY(bool allowCustomStyling READ allowCustomStyling WRITE setAllowCustomStyling NOTIFY allowCustomStylingChanged)
 

@@ -3,18 +3,29 @@
 #include "FormFactorBase.h"
 #include "modules/formfactormanager.h"
 
+/**
+ * @brief Exports form-factor preferences and detected device capabilities.
+ *
+ * Persisted preferences are supplied by the generated FormFactorBase. Runtime
+ * capability values mirror MauiMan::FormFactorInfo and update as it changes.
+ */
 class FormFactor : public FormFactorBase
 {
     Q_OBJECT
+    /** The FormFactor D-Bus schema version used for feature detection. */
     Q_PROPERTY(uint version READ version CONSTANT)
 
-    // Read-only capabilities derived at runtime by MauiMan::FormFactorInfo;
-    // not in the generated base because they aren't persisted.
+    /** Runtime-recommended UI mode derived from display and input capabilities. */
     Q_PROPERTY(uint bestMode READ bestMode NOTIFY bestModeChanged)
+    /** The default mode selected from the process environment. */
     Q_PROPERTY(uint defaultMode READ defaultMode CONSTANT)
+    /** Whether a physical keyboard is currently detected. */
     Q_PROPERTY(bool hasKeyboard READ hasKeyboard NOTIFY hasKeyboardChanged)
+    /** Whether a touchscreen is currently detected. */
     Q_PROPERTY(bool hasTouchscreen READ hasTouchscreen NOTIFY hasTouchscreenChanged)
+    /** Whether a mouse is currently detected. */
     Q_PROPERTY(bool hasMouse READ hasMouse NOTIFY hasMouseChanged)
+    /** Whether a touchpad is currently detected. */
     Q_PROPERTY(bool hasTouchpad READ hasTouchpad NOTIFY hasTouchpadChanged)
 
 public:

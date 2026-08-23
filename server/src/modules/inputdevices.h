@@ -8,13 +8,25 @@
 
 class QDBusInterface;
 
+/**
+ * @brief Exports current keyboard configuration through D-Bus.
+ *
+ * Initial values come from XKB_DEFAULT_* environment variables. When the KDE
+ * keyboard-layout service is available, keyboardLayout follows its live state.
+ * This server object is read-only and does not persist input preferences.
+ */
 class InputDevices : public QObject
 {
     Q_OBJECT
+    /** The active XKB layout name, such as us. */
     Q_PROPERTY(QString keyboardLayout READ keyboardLayout NOTIFY keyboardLayoutChanged)
+    /** The active XKB keyboard model name. */
     Q_PROPERTY(QString keyboardModel READ keyboardModel NOTIFY keyboardModelChanged)
+    /** The active XKB layout variant. */
     Q_PROPERTY(QString keyboardVariant READ keyboardVariant NOTIFY keyboardVariantChanged)
+    /** The comma-separated active XKB options. */
     Q_PROPERTY(QString keyboardOptions READ keyboardOptions NOTIFY keyboardOptionsChanged)
+    /** The active XKB ruleset name. */
     Q_PROPERTY(QString keyboardRules READ keyboardRules NOTIFY keyboardRulesChanged)
 
 public:

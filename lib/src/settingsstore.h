@@ -12,50 +12,34 @@ namespace MauiMan
 {
 
 /**
- * @brief The SettingsStore class
- * Allows to store and read settings for MauiMan from the local conf file.
+ * @brief Reads, writes, and monitors MauiMan preferences in the user configuration.
+ *
+ * Values are stored through QSettings in Maui/MauiMan.conf. beginModule() and
+ * endModule() delimit a QSettings group. External file replacements are
+ * detected and coalesced before settingsChanged() is emitted.
  */
 class MAUIMAN_EXPORT SettingsStore : public QObject
 {
     Q_OBJECT
 public:
 
-    /**
-     * @brief SettingsStore
-     * @param parent
-     */
+    /** Creates a store and begins monitoring its configuration file. */
     explicit SettingsStore(QObject *parent = nullptr);
 
-    /**
-     * @brief Load the value of a conf entry, with a possible default value
-     * @param key the key name of the value
-     * @param defaultValue the default fallback value in case the value with the given key does not exists
-     * @return
-     */
+    /** Returns the value for key, or defaultValue when the key is absent. */
     QVariant load(const QString &key, const QVariant &defaultValue);
 
-    /**
-     * @brief Save a conf value entry to the local file
-     * @param key the key name of the value
-     * @param value the entry value
-     */
+    /** Stores value under key in the current module group. */
     void save(const QString &key, const QVariant &value);
 
-    /**
-     * @brief Set up the module section to write to
-     * @param module the module name
-     */
+    /** Enters the settings group for module. Calls may be nested. */
     void beginModule(const QString &module);
 
-    /**
-     * @brief Finish writing or reading from a module section.
-     */
+    /** Leaves the most recently entered module group. */
     void endModule();
 
 Q_SIGNALS:
-    /**
-     * Emitted after a settings-file change has been resynchronized.
-     */
+    /** Emitted after an external settings-file change has been resynchronized. */
     void settingsChanged();
 
 private:

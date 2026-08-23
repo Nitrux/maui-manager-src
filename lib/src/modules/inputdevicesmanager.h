@@ -6,8 +6,7 @@ class OrgMauimanInputDevicesInterface;
 namespace MauiMan
 {
     /**
-     * @brief The InputDevicesManager class exposes runtime input-device related
-     * properties through MauiMan's D-Bus facade. Values are not persisted by
+     * @brief Observes runtime keyboard configuration through the MauiMan D-Bus facade. Values are not persisted by
      * MauiMan. Writes are best-effort and may be ignored when no writable
      * upstream source is available.
      *
@@ -18,17 +17,17 @@ namespace MauiMan
     {
         Q_OBJECT
         /**
-         * The preferred keyboard language layout.
+         * The active keyboard layout name.
          */
         Q_PROPERTY(QString keyboardLayout READ keyboardLayout WRITE setKeyboardLayout NOTIFY keyboardLayoutChanged)
         
         /**
-         * The preferred keyboard model
+         * The active keyboard model.
          */
         Q_PROPERTY(QString keyboardModel READ keyboardModel WRITE setKeyboardModel NOTIFY keyboardModelChanged)
         
         /**
-         * The preferred keyboard layout variant.
+         * The active keyboard layout variant.
          */
         Q_PROPERTY(QString keyboardVariant READ keyboardVariant WRITE setKeyboardVariant NOTIFY keyboardVariantChanged)
         
