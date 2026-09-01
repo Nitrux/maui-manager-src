@@ -17,5 +17,5 @@ class Theme : public ThemeBase
 public:
     explicit Theme(QObject *parent = nullptr);
 
-    uint version() const { return 2u; }
+    uint version() const { return 3u; }
 };

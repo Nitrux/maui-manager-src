@@ -43,6 +43,12 @@ namespace MauiMan
          */
         Q_PROPERTY(int styleType READ styleType WRITE setStyleType NOTIFY styleTypeChanged)
 
+        /** Whether MauiKit should derive its global palette from the active wallpaper image. */
+        Q_PROPERTY(bool adaptiveColorSchemeEnabled READ adaptiveColorSchemeEnabled WRITE setAdaptiveColorSchemeEnabled NOTIFY adaptiveColorSchemeEnabledChanged)
+
+        /** Canonical local image path used for the global adaptive palette. */
+        Q_PROPERTY(QString adaptiveColorSchemeSource READ adaptiveColorSchemeSource WRITE setAdaptiveColorSchemeSource NOTIFY adaptiveColorSchemeSourceChanged)
+
         /**
          * The preferred accent color used for the highlighted and checked states.
          */
@@ -127,7 +133,7 @@ namespace MauiMan
 
     public:
 
-        uint version() const { return 2u; }
+        uint version() const { return 3u; }
 
         /**
          * @brief The Theme module default values
@@ -181,6 +187,8 @@ namespace MauiMan
             }
 
             static inline const int styleType = ThemeManager::DefaultValues::preferredStyleType();
+            static inline const bool adaptiveColorSchemeEnabled = false;
+            static inline const QString adaptiveColorSchemeSource = QString();
             static inline const QString accentColor = QStringLiteral("#26c6da");
             static inline const QString iconTheme = QStringLiteral("Luv");
             static inline const QString windowControlsTheme = QStringLiteral("Nitrux");
@@ -203,6 +211,12 @@ namespace MauiMan
 
         int styleType() const;
         void setStyleType(int newStyleType);
+
+        bool adaptiveColorSchemeEnabled() const;
+        void setAdaptiveColorSchemeEnabled(bool enabled);
+
+        const QString &adaptiveColorSchemeSource() const;
+        void setAdaptiveColorSchemeSource(const QString &source);
 
         QColor accentColor() const;
         void setAccentColor(const QColor &newAccentColor);
@@ -265,6 +279,8 @@ namespace MauiMan
 
     private Q_SLOTS:
         void onStyleTypeChanged(const int &newStyleType);
+        void onAdaptiveColorSchemeEnabledChanged(bool enabled);
+        void onAdaptiveColorSchemeSourceChanged(const QString &source);
         void onAccentColorChanged(const QString &newAccentColor);
         // Slot stays QString because it's connected to the DBus signal (wire type s).
         void onWindowControlsThemeChanged(const QString &newWindowControlsTheme);
@@ -285,6 +301,8 @@ namespace MauiMan
 
     Q_SIGNALS:
         void styleTypeChanged(int styleType);
+        void adaptiveColorSchemeEnabledChanged(bool enabled);
+        void adaptiveColorSchemeSourceChanged(QString source);
         void accentColorChanged(QColor accentColor);
         void iconThemeChanged(QString iconTheme);
         void windowControlsThemeChanged(QString windowControlsTheme);
@@ -308,6 +326,9 @@ namespace MauiMan
         MauiMan::SettingsStore *m_settings;
 
         int m_styleType = ThemeManager::DefaultValues::styleType;
+        bool m_adaptiveColorSchemeEnabled = ThemeManager::DefaultValues::adaptiveColorSchemeEnabled;
+        QString m_adaptiveColorSchemeSource = ThemeManager::DefaultValues::adaptiveColorSchemeSource;
+        bool m_adaptiveColorSchemeSupported = false;
         QColor m_accentColor = QColor(ThemeManager::DefaultValues::accentColor);
         QString m_iconTheme = ThemeManager::DefaultValues::iconTheme;
         QString m_windowControlsTheme = ThemeManager::DefaultValues::windowControlsTheme;

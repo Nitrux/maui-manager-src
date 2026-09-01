@@ -10,6 +10,14 @@
 <arg name="styleType" type="i" direction="in"/>
 </method>
 
+<method name="setAdaptiveColorSchemeEnabled">
+<arg name="adaptiveColorSchemeEnabled" type="b" direction="in"/>
+</method>
+
+<method name="setAdaptiveColorSchemeSource">
+<arg name="adaptiveColorSchemeSource" type="s" direction="in"/>
+</method>
+
 <method name="setIconTheme">
 <arg name="iconTheme" type="s" direction="in"/>
 </method>
@@ -73,6 +81,8 @@
 <property name="version" type="u" access="read"/>
 <property name="accentColor" type="s" access="read"/>
 <property name="styleType" type="i" access="read"/>
+<property name="adaptiveColorSchemeEnabled" type="b" access="read"/>
+<property name="adaptiveColorSchemeSource" type="s" access="read"/>
 <property name="iconTheme" type="s" access="read"/>
 <property name="windowControlsTheme" type="s" access="read"/>
 <property name="enableCSD" type="b" access="read"/>
@@ -94,6 +104,12 @@
 </signal>
 <signal name="styleTypeChanged">
 <arg type="i"/>
+</signal>
+<signal name="adaptiveColorSchemeEnabledChanged">
+<arg type="b"/>
+</signal>
+<signal name="adaptiveColorSchemeSourceChanged">
+<arg type="s"/>
 </signal>
 <signal name="iconThemeChanged">
 <arg type="s"/>

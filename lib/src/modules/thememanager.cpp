@@ -26,6 +26,19 @@ ThemeManager::ThemeManager(QObject *parent) : QObject(parent)
 
 bool ThemeManager::sync(const QString &key, const QVariant &value)
 {
+    const bool adaptiveColorSchemeKey = key == QStringLiteral("setAdaptiveColorSchemeEnabled")
+        || key == QStringLiteral("setAdaptiveColorSchemeSource");
+    if (adaptiveColorSchemeKey && !m_adaptiveColorSchemeSupported)
+    {
+        if (!m_interface || !m_interface->isValid())
+            return false;
+
+        const QVariant themeVersion = m_interface->property("version");
+        m_adaptiveColorSchemeSupported = themeVersion.isValid() && themeVersion.toUInt() >= 3u;
+        if (!m_adaptiveColorSchemeSupported)
+            return false;
+    }
+
     if (m_interface && m_interface->isValid())
     {
         auto finishCall = [key](QDBusPendingReply<> reply) {
@@ -42,6 +55,12 @@ bool ThemeManager::sync(const QString &key, const QVariant &value)
         if (key == QStringLiteral("setStyleType"))
         {
             return finishCall(m_interface->setStyleType(value.toInt()));
+        } else if (key == QStringLiteral("setAdaptiveColorSchemeEnabled"))
+        {
+            return finishCall(m_interface->setAdaptiveColorSchemeEnabled(value.toBool()));
+        } else if (key == QStringLiteral("setAdaptiveColorSchemeSource"))
+        {
+            return finishCall(m_interface->setAdaptiveColorSchemeSource(value.toString()));
         } else if (key == QStringLiteral("setAccentColor"))
         {
             return finishCall(m_interface->setAccentColor(value.toString()));
@@ -111,13 +130,18 @@ void ThemeManager::setConnections()
                                                QStringLiteral("/Theme"),
                                                QDBusConnection::sessionBus(),
                                                this);
+    m_adaptiveColorSchemeSupported = false;
 
     if (m_interface->isValid())
     {
+        const QVariant themeVersion = m_interface->property("version");
+        m_adaptiveColorSchemeSupported = themeVersion.isValid() && themeVersion.toUInt() >= 3u;
         connect(m_interface, &OrgMauimanThemeInterface::accentColorChanged, this, &ThemeManager::onAccentColorChanged);
         connect(m_interface, &OrgMauimanThemeInterface::iconThemeChanged, this, &ThemeManager::onIconThemeChanged);
         connect(m_interface, &OrgMauimanThemeInterface::windowControlsThemeChanged, this, &ThemeManager::onWindowControlsThemeChanged);
         connect(m_interface, &OrgMauimanThemeInterface::styleTypeChanged, this, &ThemeManager::onStyleTypeChanged);
+        connect(m_interface, &OrgMauimanThemeInterface::adaptiveColorSchemeEnabledChanged, this, &ThemeManager::onAdaptiveColorSchemeEnabledChanged);
+        connect(m_interface, &OrgMauimanThemeInterface::adaptiveColorSchemeSourceChanged, this, &ThemeManager::onAdaptiveColorSchemeSourceChanged);
         connect(m_interface, &OrgMauimanThemeInterface::enableCSDChanged, this, &ThemeManager::onEnableCSDChanged);
         connect(m_interface, &OrgMauimanThemeInterface::borderRadiusChanged, this, &ThemeManager::onBorderRadiusChanged);
         connect(m_interface, &OrgMauimanThemeInterface::iconSizeChanged, this, &ThemeManager::onIconSizeChanged);
@@ -143,6 +167,16 @@ void ThemeManager::loadSettings()
         // When server is available, DBus properties are the source of truth.
         m_accentColor = QColor(m_interface->property("accentColor").toString());
         m_styleType = m_interface->property("styleType").toInt();
+        if (m_adaptiveColorSchemeSupported)
+        {
+            m_adaptiveColorSchemeEnabled = m_interface->property("adaptiveColorSchemeEnabled").toBool();
+            m_adaptiveColorSchemeSource = m_interface->property("adaptiveColorSchemeSource").toString();
+        }
+        else
+        {
+            m_adaptiveColorSchemeEnabled = m_settings->load(QStringLiteral("AdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled).toBool();
+            m_adaptiveColorSchemeSource = m_settings->load(QStringLiteral("AdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource).toString();
+        }
         m_iconTheme = m_interface->property("iconTheme").toString();
         m_windowControlsTheme = m_interface->property("windowControlsTheme").toString();
         m_enableCSD = m_interface->property("enableCSD").toBool();
@@ -173,6 +207,8 @@ void ThemeManager::loadSettings()
     m_paddingSize = m_settings->load(QStringLiteral("PaddingSize"), m_paddingSize).toUInt();
     m_marginSize = m_settings->load(QStringLiteral("MarginSize"), m_marginSize).toUInt();
     m_spacingSize = m_settings->load(QStringLiteral("SpacingSize"), m_spacingSize).toUInt();
+    m_adaptiveColorSchemeEnabled = m_settings->load(QStringLiteral("AdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled).toBool();
+    m_adaptiveColorSchemeSource = m_settings->load(QStringLiteral("AdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource).toString();
     m_enableEffects = m_settings->load(QStringLiteral("EnableEffects"), m_enableEffects).toBool();
     m_defaultFont = m_settings->load(QStringLiteral("DefaultFont"), m_defaultFont).toString();
     m_smallFont = m_settings->load(QStringLiteral("SmallFont"), m_smallFont).toString();
@@ -199,6 +235,46 @@ void ThemeManager::setStyleType(int newStyleType)
         m_settings->save(QStringLiteral("StyleType"), m_styleType);
     }
     Q_EMIT styleTypeChanged(m_styleType);
+}
+
+bool ThemeManager::adaptiveColorSchemeEnabled() const
+{
+    return m_adaptiveColorSchemeEnabled;
+}
+
+void ThemeManager::setAdaptiveColorSchemeEnabled(bool enabled)
+{
+    if (m_adaptiveColorSchemeEnabled == enabled)
+        return;
+
+    m_adaptiveColorSchemeEnabled = enabled;
+    if (!sync(QStringLiteral("setAdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled))
+    {
+        m_settings->beginModule(QStringLiteral("Theme"));
+        m_settings->save(QStringLiteral("AdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled);
+        m_settings->endModule();
+    }
+    Q_EMIT adaptiveColorSchemeEnabledChanged(m_adaptiveColorSchemeEnabled);
+}
+
+const QString &ThemeManager::adaptiveColorSchemeSource() const
+{
+    return m_adaptiveColorSchemeSource;
+}
+
+void ThemeManager::setAdaptiveColorSchemeSource(const QString &source)
+{
+    if (m_adaptiveColorSchemeSource == source)
+        return;
+
+    m_adaptiveColorSchemeSource = source;
+    if (!sync(QStringLiteral("setAdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource))
+    {
+        m_settings->beginModule(QStringLiteral("Theme"));
+        m_settings->save(QStringLiteral("AdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource);
+        m_settings->endModule();
+    }
+    Q_EMIT adaptiveColorSchemeSourceChanged(m_adaptiveColorSchemeSource);
 }
 
 QColor ThemeManager::accentColor() const
@@ -285,6 +361,24 @@ void ThemeManager::onStyleTypeChanged(const int &newStyleType)
 
     m_styleType = newStyleType;
     Q_EMIT styleTypeChanged(m_styleType);
+}
+
+void ThemeManager::onAdaptiveColorSchemeEnabledChanged(bool enabled)
+{
+    if (m_adaptiveColorSchemeEnabled == enabled)
+        return;
+
+    m_adaptiveColorSchemeEnabled = enabled;
+    Q_EMIT adaptiveColorSchemeEnabledChanged(m_adaptiveColorSchemeEnabled);
+}
+
+void ThemeManager::onAdaptiveColorSchemeSourceChanged(const QString &source)
+{
+    if (m_adaptiveColorSchemeSource == source)
+        return;
+
+    m_adaptiveColorSchemeSource = source;
+    Q_EMIT adaptiveColorSchemeSourceChanged(m_adaptiveColorSchemeSource);
 }
 
 void ThemeManager::onAccentColorChanged(const QString &newAccentColor)
