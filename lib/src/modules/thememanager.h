@@ -348,6 +348,7 @@ namespace MauiMan
 
         bool sync(const QString &key, const QVariant &value);
         void setConnections();
+        void reloadSettings();
         void loadSettings();
 
     };

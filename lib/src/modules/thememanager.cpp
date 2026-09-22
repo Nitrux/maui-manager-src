@@ -15,13 +15,13 @@ ThemeManager::ThemeManager(QObject *parent) : QObject(parent)
     auto server = MauiManUtils::instance();
     if (server->serverRunning())
         this->setConnections();
+    else
+        loadSettings();
 
     connect(server, &MauiManUtils::serverRunningChanged, this, [this](bool state) {
         if (state)
             this->setConnections();
     });
-
-    loadSettings();
 }
 
 bool ThemeManager::sync(const QString &key, const QVariant &value)
@@ -155,7 +155,76 @@ void ThemeManager::setConnections()
         connect(m_interface, &OrgMauimanThemeInterface::customColorSchemeChanged, this, &ThemeManager::onCustomColorSchemeChanged);
         connect(m_interface, &OrgMauimanThemeInterface::allowCustomStylingChanged, this, &ThemeManager::onAllowCustomStylingChanged);
         connect(m_interface, &OrgMauimanThemeInterface::scrollBarOnLeftChanged, this, &ThemeManager::onScrollBarOnLeftChanged);
+        reloadSettings();
     }
+    else
+    {
+        loadSettings();
+    }
+}
+
+void ThemeManager::reloadSettings()
+{
+    const int oldStyleType = m_styleType;
+    const bool oldAdaptiveColorSchemeEnabled = m_adaptiveColorSchemeEnabled;
+    const QString oldAdaptiveColorSchemeSource = m_adaptiveColorSchemeSource;
+    const QColor oldAccentColor = m_accentColor;
+    const QString oldIconTheme = m_iconTheme;
+    const QString oldWindowControlsTheme = m_windowControlsTheme;
+    const bool oldEnableCSD = m_enableCSD;
+    const uint oldBorderRadius = m_borderRadius;
+    const uint oldIconSize = m_iconSize;
+    const uint oldPaddingSize = m_paddingSize;
+    const uint oldMarginSize = m_marginSize;
+    const uint oldSpacingSize = m_spacingSize;
+    const bool oldEnableEffects = m_enableEffects;
+    const QString oldDefaultFont = m_defaultFont;
+    const QString oldSmallFont = m_smallFont;
+    const QString oldMonospacedFont = m_monospacedFont;
+    const QString oldCustomColorScheme = m_customColorScheme;
+    const bool oldAllowCustomStyling = m_allowCustomStyling;
+    const bool oldScrollBarOnLeft = m_scrollBarOnLeft;
+
+    loadSettings();
+
+    if (oldStyleType != m_styleType)
+        Q_EMIT styleTypeChanged(m_styleType);
+    if (oldAdaptiveColorSchemeEnabled != m_adaptiveColorSchemeEnabled)
+        Q_EMIT adaptiveColorSchemeEnabledChanged(m_adaptiveColorSchemeEnabled);
+    if (oldAdaptiveColorSchemeSource != m_adaptiveColorSchemeSource)
+        Q_EMIT adaptiveColorSchemeSourceChanged(m_adaptiveColorSchemeSource);
+    if (oldAccentColor != m_accentColor)
+        Q_EMIT accentColorChanged(m_accentColor);
+    if (oldIconTheme != m_iconTheme)
+        Q_EMIT iconThemeChanged(m_iconTheme);
+    if (oldWindowControlsTheme != m_windowControlsTheme)
+        Q_EMIT windowControlsThemeChanged(m_windowControlsTheme);
+    if (oldEnableCSD != m_enableCSD)
+        Q_EMIT enableCSDChanged(m_enableCSD);
+    if (oldBorderRadius != m_borderRadius)
+        Q_EMIT borderRadiusChanged(m_borderRadius);
+    if (oldIconSize != m_iconSize)
+        Q_EMIT iconSizeChanged(m_iconSize);
+    if (oldPaddingSize != m_paddingSize)
+        Q_EMIT paddingSizeChanged(m_paddingSize);
+    if (oldMarginSize != m_marginSize)
+        Q_EMIT marginSizeChanged(m_marginSize);
+    if (oldSpacingSize != m_spacingSize)
+        Q_EMIT spacingSizeChanged(m_spacingSize);
+    if (oldEnableEffects != m_enableEffects)
+        Q_EMIT enableEffectsChanged(m_enableEffects);
+    if (oldDefaultFont != m_defaultFont)
+        Q_EMIT defaultFontChanged(m_defaultFont);
+    if (oldSmallFont != m_smallFont)
+        Q_EMIT smallFontChanged(m_smallFont);
+    if (oldMonospacedFont != m_monospacedFont)
+        Q_EMIT monospacedFontChanged(m_monospacedFont);
+    if (oldCustomColorScheme != m_customColorScheme)
+        Q_EMIT customColorSchemeChanged(m_customColorScheme);
+    if (oldAllowCustomStyling != m_allowCustomStyling)
+        Q_EMIT allowCustomStylingChanged(m_allowCustomStyling);
+    if (oldScrollBarOnLeft != m_scrollBarOnLeft)
+        Q_EMIT scrollBarOnLeftChanged(m_scrollBarOnLeft);
 }
 
 void ThemeManager::loadSettings()
@@ -190,6 +259,7 @@ void ThemeManager::loadSettings()
         m_smallFont = m_interface->property("smallFont").toString();
         m_monospacedFont = m_interface->property("monospacedFont").toString();
         m_customColorScheme = m_interface->property("customColorScheme").toString();
+        m_allowCustomStyling = m_interface->property("allowCustomStyling").toBool();
         m_scrollBarOnLeft = m_interface->property("scrollBarOnLeft").toBool();
 
         m_settings->endModule();
