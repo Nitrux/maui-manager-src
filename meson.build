@@ -121,7 +121,8 @@ if(NOT TARGET MauiMan4)
   add_library(MauiMan4 SHARED IMPORTED)
   set_target_properties(MauiMan4 PROPERTIES
     IMPORTED_LOCATION "${_MAUIMAN_PREFIX}/@LIBDIR@/libMauiMan4.so.4.0.5"
-    INTERFACE_INCLUDE_DIRECTORIES "${_MAUIMAN_PREFIX}/include")
+    INTERFACE_INCLUDE_DIRECTORIES "${_MAUIMAN_PREFIX}/include"
+    INTERFACE_LINK_LIBRARIES "Qt6::Core;Qt6::Gui;Qt6::DBus")
 endif()
 if(NOT TARGET MauiMan4::MauiMan4)
   add_library(MauiMan4::MauiMan4 ALIAS MauiMan4)
