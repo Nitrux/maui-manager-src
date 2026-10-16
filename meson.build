@@ -179,6 +179,8 @@ public:
         });
     }
 };
+
+#include "mauiman_qml_plugin.moc"
 ''')}
 )
 mauiman_qml_moc = qt6.preprocess(moc_sources: [mauiman_qml_plugin_source])
