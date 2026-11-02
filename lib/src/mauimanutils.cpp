@@ -3,6 +3,8 @@
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusConnectionInterface>
 #include <QtDBus/QDBusServiceWatcher>
+#include <QtDBus/QDBusMessage>
+#include <QtDBus/QDBusReply>
 
 #include <QStringList>
 
@@ -14,11 +16,11 @@ MauiManUtils::MauiManUtils(QObject *parent)
 : QObject{parent}
 {
     const QDBusConnection bus = QDBusConnection::sessionBus();
-    const auto registeredServices = bus.interface()->registeredServiceNames();
-
-    if (registeredServices.isValid())
+    // one NameHasOwner call, instead of listing every name on the bus (ListNames)
+    const QDBusReply<bool> registered = bus.interface()->isServiceRegistered(mauimanInterface);
+    if (registered.isValid())
     {
-        m_serverRunning = registeredServices.value().contains(mauimanInterface);
+        m_serverRunning = registered.value();
     }
 
     auto watcher = new QDBusServiceWatcher(mauimanInterface, QDBusConnection::sessionBus(),
@@ -55,4 +57,15 @@ void MauiManUtils::startServer()
 void MauiManUtils::invokeManager(const QString &module)
 {
     QProcess::startDetached(QStringLiteral("MauiSettings"), QStringList {QStringLiteral("-m"), module});
+}
+
+QVariantMap MauiManUtils::properties(const QString &path, const QString &interface)
+{
+    QDBusMessage message = QDBusMessage::createMethodCall(mauimanInterface,
+                                                          path,
+                                                          QStringLiteral("org.freedesktop.DBus.Properties"),
+                                                          QStringLiteral("GetAll"));
+    message << interface;
+    const QDBusReply<QVariantMap> reply = QDBusConnection::sessionBus().call(message);
+    return reply.isValid() ? reply.value() : QVariantMap();
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QVariantMap>
 #include "mauiman_export.h"
 
 /**
@@ -28,6 +29,15 @@ public:
 
     /** Starts MauiManServer as a detached process. */
     static void startServer();
+
+    /**
+     * @brief All properties of one MauiMan module in a single blocking D-Bus call
+     * (org.freedesktop.DBus.Properties.GetAll), instead of one round trip per property.
+     * @param path the module's object path, e.g. "/Theme"
+     * @param interface the module's interface, e.g. "org.mauiman.Theme"
+     * @return the properties, or an empty map when the server did not answer
+     */
+    static QVariantMap properties(const QString &path, const QString &interface);
 
     /** Opens MauiSettings directly at the named module. */
     static void invokeManager(const QString &module);

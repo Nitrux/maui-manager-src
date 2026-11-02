@@ -134,8 +134,8 @@ void ThemeManager::setConnections()
 
     if (m_interface->isValid())
     {
-        const QVariant themeVersion = m_interface->property("version");
-        m_adaptiveColorSchemeSupported = themeVersion.isValid() && themeVersion.toUInt() >= 3u;
+        // the server's version (adaptive colour scheme support) is read with the other
+        // properties in loadSettings(), in one GetAll call
         connect(m_interface, &OrgMauimanThemeInterface::accentColorChanged, this, &ThemeManager::onAccentColorChanged);
         connect(m_interface, &OrgMauimanThemeInterface::iconThemeChanged, this, &ThemeManager::onIconThemeChanged);
         connect(m_interface, &OrgMauimanThemeInterface::windowControlsThemeChanged, this, &ThemeManager::onWindowControlsThemeChanged);
@@ -233,37 +233,45 @@ void ThemeManager::loadSettings()
 
     if(m_interface && m_interface->isValid())
     {
-        // When server is available, DBus properties are the source of truth.
-        m_accentColor = QColor(m_interface->property("accentColor").toString());
-        m_styleType = m_interface->property("styleType").toInt();
-        if (m_adaptiveColorSchemeSupported)
+        // When server is available, DBus properties are the source of truth. One GetAll
+        // call instead of a blocking Get per property (21 round trips at every app start).
+        const QVariantMap p = MauiManUtils::properties(QStringLiteral("/Theme"),
+                                                       QString::fromLatin1(OrgMauimanThemeInterface::staticInterfaceName()));
+        if (!p.isEmpty())
         {
-            m_adaptiveColorSchemeEnabled = m_interface->property("adaptiveColorSchemeEnabled").toBool();
-            m_adaptiveColorSchemeSource = m_interface->property("adaptiveColorSchemeSource").toString();
-        }
-        else
-        {
-            m_adaptiveColorSchemeEnabled = m_settings->load(QStringLiteral("AdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled).toBool();
-            m_adaptiveColorSchemeSource = m_settings->load(QStringLiteral("AdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource).toString();
-        }
-        m_iconTheme = m_interface->property("iconTheme").toString();
-        m_windowControlsTheme = m_interface->property("windowControlsTheme").toString();
-        m_enableCSD = m_interface->property("enableCSD").toBool();
-        m_borderRadius = m_interface->property("borderRadius").toUInt();
-        m_iconSize = m_interface->property("iconSize").toUInt();
-        m_paddingSize = m_interface->property("paddingSize").toUInt();
-        m_marginSize = m_interface->property("marginSize").toUInt();
-        m_spacingSize = m_interface->property("spacingSize").toUInt();
-        m_enableEffects = m_interface->property("enableEffects").toBool();
-        m_defaultFont = m_interface->property("defaultFont").toString();
-        m_smallFont = m_interface->property("smallFont").toString();
-        m_monospacedFont = m_interface->property("monospacedFont").toString();
-        m_customColorScheme = m_interface->property("customColorScheme").toString();
-        m_allowCustomStyling = m_interface->property("allowCustomStyling").toBool();
-        m_scrollBarOnLeft = m_interface->property("scrollBarOnLeft").toBool();
+            const QVariant themeVersion = p.value(QStringLiteral("version"));
+            m_adaptiveColorSchemeSupported = themeVersion.isValid() && themeVersion.toUInt() >= 3u;
+            m_accentColor = QColor(p.value(QStringLiteral("accentColor")).toString());
+            m_styleType = p.value(QStringLiteral("styleType")).toInt();
+            if (m_adaptiveColorSchemeSupported)
+            {
+                m_adaptiveColorSchemeEnabled = p.value(QStringLiteral("adaptiveColorSchemeEnabled")).toBool();
+                m_adaptiveColorSchemeSource = p.value(QStringLiteral("adaptiveColorSchemeSource")).toString();
+            }
+            else
+            {
+                m_adaptiveColorSchemeEnabled = m_settings->load(QStringLiteral("AdaptiveColorSchemeEnabled"), m_adaptiveColorSchemeEnabled).toBool();
+                m_adaptiveColorSchemeSource = m_settings->load(QStringLiteral("AdaptiveColorSchemeSource"), m_adaptiveColorSchemeSource).toString();
+            }
+            m_iconTheme = p.value(QStringLiteral("iconTheme")).toString();
+            m_windowControlsTheme = p.value(QStringLiteral("windowControlsTheme")).toString();
+            m_enableCSD = p.value(QStringLiteral("enableCSD")).toBool();
+            m_borderRadius = p.value(QStringLiteral("borderRadius")).toUInt();
+            m_iconSize = p.value(QStringLiteral("iconSize")).toUInt();
+            m_paddingSize = p.value(QStringLiteral("paddingSize")).toUInt();
+            m_marginSize = p.value(QStringLiteral("marginSize")).toUInt();
+            m_spacingSize = p.value(QStringLiteral("spacingSize")).toUInt();
+            m_enableEffects = p.value(QStringLiteral("enableEffects")).toBool();
+            m_defaultFont = p.value(QStringLiteral("defaultFont")).toString();
+            m_smallFont = p.value(QStringLiteral("smallFont")).toString();
+            m_monospacedFont = p.value(QStringLiteral("monospacedFont")).toString();
+            m_customColorScheme = p.value(QStringLiteral("customColorScheme")).toString();
+            m_allowCustomStyling = p.value(QStringLiteral("allowCustomStyling")).toBool();
+            m_scrollBarOnLeft = p.value(QStringLiteral("scrollBarOnLeft")).toBool();
 
-        m_settings->endModule();
-        return;
+            m_settings->endModule();
+            return;
+        }
     }
 
     // Offline fallback: use cached local settings until DBus service appears.
