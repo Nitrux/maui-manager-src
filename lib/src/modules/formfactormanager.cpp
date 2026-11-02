@@ -76,11 +76,16 @@ void FormFactorManager::loadSettings()
 
     if(m_interface && m_interface->isValid())
     {
-        // When server is available, DBus properties are the source of truth.
-        m_preferredMode = m_interface->property("preferredMode").toUInt();
-        m_forceTouchScreen = m_interface->property("forceTouchScreen").toBool();
-        m_settings->endModule();
-        return;
+        // When server is available, DBus properties are the source of truth (one GetAll call).
+        const QVariantMap p = MauiManUtils::properties(QStringLiteral("/FormFactor"),
+                                                       QString::fromLatin1(OrgMauimanFormFactorInterface::staticInterfaceName()));
+        if (!p.isEmpty())
+        {
+            m_preferredMode = p.value(QStringLiteral("preferredMode")).toUInt();
+            m_forceTouchScreen = p.value(QStringLiteral("forceTouchScreen")).toBool();
+            m_settings->endModule();
+            return;
+        }
     }
 
     // Offline fallback: use cached local settings until DBus service appears.
