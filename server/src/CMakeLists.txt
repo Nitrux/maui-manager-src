@@ -55,3 +55,9 @@ target_link_libraries(MauiManServer
     Qt${QT_MAJOR_VERSION}::DBus)
 
 install(TARGETS MauiManServer ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+
+target_precompile_headers(MauiManServer PRIVATE
+    <QDebug>
+    <QFileInfo>
+    <QGuiApplication>
+)

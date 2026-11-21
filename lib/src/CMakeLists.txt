@@ -76,4 +76,18 @@ if(Qt${QT_MAJOR_VERSION}Qml_FOUND AND COMMAND ecm_add_qml_module)
         Qt${QT_MAJOR_VERSION}::Qml)
 
     ecm_finalize_qml_module(MauiManQml DESTINATION ${KDE_INSTALL_QMLDIR})
+
+    target_precompile_headers(MauiManQml PRIVATE
+        <QDebug>
+        <QFileInfo>
+        <QObject>
+        <QString>
+        <QQmlEngine>
+    )
 endif()
+
+target_precompile_headers(${PROJECT_NAME}${MAUI_MAJOR_VERSION} PRIVATE
+    <QDebug>
+    <QFileInfo>
+    <QGuiApplication>
+)
