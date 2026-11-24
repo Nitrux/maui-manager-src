@@ -7,6 +7,10 @@ cmake_minimum_required(VERSION 3.16)
 
 project(MauiManServer VERSION ${MAUIMAN_VERSION})
 
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix" FORCE)
+endif()
+
 find_package(Qt${QT_MAJOR_VERSION} ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Gui)
 
 add_subdirectory(src)
